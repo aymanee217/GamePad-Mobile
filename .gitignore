@@ -1,0 +1,43 @@
+# Flutter
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+
+# Android
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/android/app/google-services.json
+
+# iOS
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/App.framework/
+mobile/ios/Flutter/Flutter.framework/
+mobile/ios/Flutter/ephemeral/
+mobile/ios/Flutter/flutter_export_environment.sh
+mobile/ios/Runner/GeneratedPluginRegistrant.*
+mobile/ios/Runner.xcworkspace/xcuserdata/
+mobile/ios/build/
+*.xcworkspace/xcuserdata/
+*.xcuserdata/
+
+# .NET
+pc-server/bin/
+pc-server/obj/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
