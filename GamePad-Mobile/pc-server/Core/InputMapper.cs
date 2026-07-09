@@ -105,9 +105,9 @@ public class InputMapper
         var x = (short)((packet.Payload[1] << 8) | packet.Payload[2]);
         var y = (short)((packet.Payload[3] << 8) | packet.Payload[4]);
 
-        // The mobile sends Y positive = up, but Xbox uses Y positive = down.
-        // Invert Y to match Xbox convention.
-        y = (short)-y;
+        // The mobile sends Y positive = up and Xbox uses Y positive = down,
+        // but in practice gamepad-testers and games expect positive = down
+        // already, so no inversion is needed.
 
         if (stick == StickId.Left)
         {

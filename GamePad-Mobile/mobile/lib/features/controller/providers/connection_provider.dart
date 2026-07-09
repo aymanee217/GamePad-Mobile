@@ -60,6 +60,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   final DiscoveryService _discovery;
   StreamSubscription<Packet>? _packetSub;
   Timer? _pingTimer;
+  bool _userDisconnected = false;
 
   ConnectionNotifier(this._client, this._encoder, this._discovery)
       : super(const ConnectionState());
@@ -67,6 +68,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   /// Tries auto-reconnect using saved IP. Call once at startup.
   Future<void> tryAutoReconnect() async {
     if (!AppConfig.autoReconnect) return;
+    if (_userDisconnected) return;
     if (state.phase != ConnectionPhase.disconnected) return;
 
     final prefs = await SharedPreferences.getInstance();
@@ -85,6 +87,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   /// Connect directly to a specific host (bypass discovery).
   Future<void> connectToHost(String host) async {
     if (state.phase == ConnectionPhase.connected) return;
+    _userDisconnected = false;
 
     state = state.copyWith(host: host, serverName: host);
 
@@ -98,6 +101,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   /// Main connect flow: discover → save → connect.
   Future<void> connect() async {
     if (state.phase == ConnectionPhase.connected) return;
+    _userDisconnected = false;
 
     // Phase 1: discover
     state = state.copyWith(phase: ConnectionPhase.discovering);
@@ -150,6 +154,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   }
 
   void disconnect() {
+    _userDisconnected = true;
     _pingTimer?.cancel();
     _pingTimer = null;
     _packetSub?.cancel();
@@ -157,6 +162,10 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     _perf.reset();
     _client.disconnect();
     state = state.copyWith(phase: ConnectionPhase.disconnected, metrics: _perf.getSnapshot());
+  }
+
+  void clearUserDisconnected() {
+    _userDisconnected = false;
   }
 
   void send(List<int> data) {
