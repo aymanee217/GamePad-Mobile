@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GamePadServer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2bbb00d19f5c4bed1437674aec4fe4a41f1e7c64")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0538ebc05fd75b6067dfcbd1169d204a8ecd3fd6")]
 [assembly: System.Reflection.AssemblyProductAttribute("GamePadServer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GamePadServer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

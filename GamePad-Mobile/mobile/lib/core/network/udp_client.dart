@@ -19,6 +19,8 @@ class UdpClient {
   bool get isConnected => _socket != null && !_disposed;
 
   Future<void> connect(String host, int port) async {
+    // Close any existing socket before creating a new one
+    _socket?.close();
     _host = host;
     _port = port;
     _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
@@ -46,10 +48,8 @@ class UdpClient {
   }
 
   void disconnect() {
-    _packetController.close();
     _socket?.close();
     _socket = null;
-    _disposed = true;
   }
 
   void dispose() => disconnect();

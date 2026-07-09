@@ -67,6 +67,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   /// Tries auto-reconnect using saved IP. Call once at startup.
   Future<void> tryAutoReconnect() async {
     if (!AppConfig.autoReconnect) return;
+    if (state.phase != ConnectionPhase.disconnected) return;
 
     final prefs = await SharedPreferences.getInstance();
     var savedHost = prefs.getString(AppConfig.prefDiscoveredHost);
@@ -127,8 +128,15 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   }
 
   Future<void> _doConnect() async {
+    if (state.phase == ConnectionPhase.connected ||
+        state.phase == ConnectionPhase.connecting) return;
+
     state = state.copyWith(phase: ConnectionPhase.connecting);
     try {
+      _packetSub?.cancel();
+      _pingTimer?.cancel();
+      _client.disconnect();
+
       await _client.connect(state.host, state.port);
       _packetSub = _client.onPacket.listen(_onPacket);
       _pingTimer = Timer.periodic(

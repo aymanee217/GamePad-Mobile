@@ -17,7 +17,9 @@ class ControllerScreen extends ConsumerWidget {
     final hidState = ref.watch(hidProvider);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(connectionProvider.notifier).tryAutoReconnect();
+      if (connection.phase == ConnectionPhase.disconnected) {
+        ref.read(connectionProvider.notifier).tryAutoReconnect();
+      }
       ref.read(layoutProvider.notifier).load();
     });
 
