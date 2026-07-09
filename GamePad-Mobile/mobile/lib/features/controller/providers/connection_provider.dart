@@ -69,13 +69,29 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     if (!AppConfig.autoReconnect) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final savedHost = prefs.getString(AppConfig.prefDiscoveredHost);
+    var savedHost = prefs.getString(AppConfig.prefDiscoveredHost);
     final savedPort = prefs.getInt(AppConfig.prefDiscoveredPort);
 
-    if (savedHost != null && savedHost.isNotEmpty) {
-      state = state.copyWith(host: savedHost, port: savedPort ?? AppConfig.defaultPort);
-      await _doConnect();
+    // Fall back to default host if no saved IP
+    if (savedHost == null || savedHost.isEmpty) {
+      savedHost = AppConfig.defaultHost;
     }
+
+    state = state.copyWith(host: savedHost, port: savedPort ?? AppConfig.defaultPort);
+    await _doConnect();
+  }
+
+  /// Connect directly to a specific host (bypass discovery).
+  Future<void> connectToHost(String host) async {
+    if (state.phase == ConnectionPhase.connected) return;
+
+    state = state.copyWith(host: host, serverName: host);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConfig.prefDiscoveredHost, host);
+    await prefs.setInt(AppConfig.prefDiscoveredPort, AppConfig.defaultPort);
+
+    await _doConnect();
   }
 
   /// Main connect flow: discover → save → connect.

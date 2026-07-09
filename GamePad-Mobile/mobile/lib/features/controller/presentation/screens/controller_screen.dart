@@ -60,6 +60,7 @@ class ControllerScreen extends ConsumerWidget {
                 onConnect: () => ref.read(connectionProvider.notifier).connect(),
                 onDisconnect: () => ref.read(connectionProvider.notifier).disconnect(),
                 onRetry: () => ref.read(connectionProvider.notifier).connect(),
+                onConnectToHost: (host) => ref.read(connectionProvider.notifier).connectToHost(host),
               ),
             ),
             if (connection.phase == ConnectionPhase.connected)
@@ -222,6 +223,7 @@ class ConnectionTile extends StatelessWidget {
   final VoidCallback onConnect;
   final VoidCallback onDisconnect;
   final VoidCallback onRetry;
+  final ValueChanged<String> onConnectToHost;
 
   const ConnectionTile({
     super.key,
@@ -229,7 +231,43 @@ class ConnectionTile extends StatelessWidget {
     required this.onConnect,
     required this.onDisconnect,
     required this.onRetry,
+    required this.onConnectToHost,
   });
+
+  void _showManualIpDialog(BuildContext context) {
+    final controller = TextEditingController(text: state.host);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enter server IP'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'e.g. 192.168.100.104',
+            labelText: 'IP address',
+          ),
+          keyboardType: TextInputType.number,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final ip = controller.text.trim();
+              if (ip.isNotEmpty) {
+                onConnectToHost(ip);
+                Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text('Connect'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -285,10 +323,19 @@ class ConnectionTile extends StatelessWidget {
         icon = const Icon(Icons.error_outline, size: 16, color: Colors.red);
         text = 'No server found';
         color = Colors.red;
-        action = TextButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh, size: 14),
-          label: const Text('Retry', style: TextStyle(fontSize: 12)));
+        action = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh, size: 14),
+              label: const Text('Retry', style: TextStyle(fontSize: 12))),
+            TextButton.icon(
+              onPressed: () => _showManualIpDialog(context),
+              icon: const Icon(Icons.edit, size: 14),
+              label: const Text('Manual IP', style: TextStyle(fontSize: 12))),
+          ],
+        );
         break;
     }
 
