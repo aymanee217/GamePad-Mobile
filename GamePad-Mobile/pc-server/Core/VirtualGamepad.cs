@@ -1,4 +1,5 @@
 using Nefarius.ViGEm.Client;
+using Nefarius.ViGEm.Client.Exceptions;
 using Nefarius.ViGEm.Client.Targets;
 using Nefarius.ViGEm.Client.Targets.Xbox360;
 
@@ -29,9 +30,26 @@ public class VirtualGamepad : IDisposable
             Logger.Warn($"ViGEmBus not installed — virtual gamepad unavailable. {ex.Message}");
             Logger.Warn("Download from: https://github.com/nefarius/ViGEmBus/releases");
         }
+        catch (VigemBusNotFoundException ex)
+        {
+            Logger.Warn($"ViGEmBus driver not reachable — virtual gamepad unavailable.");
+            Logger.Warn($"Details: {ex.Message}");
+            Logger.Warn("");
+            Logger.Warn("Possible solutions (after PC restart did not help):");
+            Logger.Warn("  1. Open Device Manager → View → Show hidden devices");
+            Logger.Warn("     Check if 'ViGEmBus' is under 'System devices' with a yellow icon");
+            Logger.Warn("  2. Run as Administrator: the driver may need admin rights");
+            Logger.Warn("  3. Reboot into 'Disable driver signature enforcement' mode:");
+            Logger.Warn("     Settings → Recovery → Advanced Startup → Restart now");
+            Logger.Warn("     → Troubleshoot → Advanced options → Startup Settings → Restart");
+            Logger.Warn("     → Press 7 (Disable driver signature enforcement)");
+            Logger.Warn("  4. Try installing a different version:");
+            Logger.Warn("     https://github.com/nefarius/ViGEmBus/releases");
+        }
         catch (Exception ex)
         {
             Logger.Warn($"Failed to create virtual gamepad: {ex.Message}");
+            Logger.Warn($"Type: {ex.GetType().FullName}");
         }
     }
 
