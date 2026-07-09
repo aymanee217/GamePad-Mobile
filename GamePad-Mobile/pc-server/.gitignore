@@ -1,0 +1,4 @@
+bin/
+obj/
+server-log.txt
+*.log

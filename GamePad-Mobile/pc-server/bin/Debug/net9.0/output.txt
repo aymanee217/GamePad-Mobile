@@ -1,6 +1,0 @@
-[19:32:33.608] [INFO] GamePad Server v3.0.0 starting...
-[19:32:33.733] [INFO] Listening on UDP port 42420
-[19:32:33.740] [INFO] Protocol version: 0x01
-[19:32:33.745] [INFO] Press Ctrl+C to stop.
-[19:32:33.841] [WARN] Failed to create virtual gamepad: Exception of type 'Nefarius.ViGEm.Client.Exceptions.VigemBusNotFoundException' was thrown.
-[19:32:36.678] [INFO] UDP server stopped.
