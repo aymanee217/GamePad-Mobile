@@ -3,7 +3,7 @@ name: Build iOS App
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, master]
 
 env:
   FLUTTER_VERSION: "3.44.5"
