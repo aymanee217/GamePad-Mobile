@@ -27,8 +27,8 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Build iOS debug (no codesign)
-        run: flutter build ios --debug --no-codesign
+      - name: Build iOS release (no codesign)
+        run: flutter build ios --release --no-codesign
 
       - name: Prepare .app bundle
         run: |
