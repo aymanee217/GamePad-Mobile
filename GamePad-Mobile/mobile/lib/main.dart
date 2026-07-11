@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'features/controller/presentation/screens/controller_screen.dart';
+import 'features/controller/presentation/screens/controller_profiles_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +24,7 @@ class GamePadApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         brightness: Brightness.dark,
       ),
-      home: const ControllerScreen(),
+      home: const ControllerProfilesScreen(),
     );
   }
 }

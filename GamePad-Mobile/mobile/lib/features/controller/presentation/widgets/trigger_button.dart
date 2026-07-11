@@ -4,7 +4,8 @@ import '../../../../core/protocol/enums.dart' show TriggerId;
 import '../../providers/connection_provider.dart';
 import '../../providers/axis_state_provider.dart';
 
-/// Toggle button for triggers (L2/R2). Tap to activate, tap again to release.
+/// Press-and-hold trigger button (L2/R2). Press to activate, release to deactivate.
+/// Works like L1/R1 buttons instead of toggle.
 class TriggerButton extends ConsumerStatefulWidget {
   final String label;
   final TriggerId triggerId;
@@ -32,12 +33,29 @@ class TriggerButton extends ConsumerStatefulWidget {
 }
 
 class _TriggerButtonState extends ConsumerState<TriggerButton> {
-  bool _isActive = false;
+  bool _isPressed = false;
 
-  void _toggle() {
+  void _onTapDown(_) {
     if (widget.editMode) return;
-    setState(() => _isActive = !_isActive);
-    final value = _isActive ? 255 : 0;
+    setState(() => _isPressed = true);
+    _send(255);
+  }
+
+  void _onTapUp(_) {
+    if (widget.editMode) return;
+    setState(() => _isPressed = false);
+    _send(0);
+  }
+
+  void _onTapCancel() {
+    if (widget.editMode) return;
+    if (_isPressed) {
+      setState(() => _isPressed = false);
+      _send(0);
+    }
+  }
+
+  void _send(int value) {
     final encoder = ref.read(packetEncoderProvider);
     final packet = encoder.encodeTriggerEvent(widget.triggerId, value);
     ref.read(connectionProvider.notifier).send(packet.toBytes());
@@ -55,26 +73,28 @@ class _TriggerButtonState extends ConsumerState<TriggerButton> {
     return Opacity(
       opacity: widget.opacity,
       child: GestureDetector(
-        onTap: _toggle,
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
+          duration: const Duration(milliseconds: 50),
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
             borderRadius: BorderRadius.circular(widget.width / 2),
-            color: _isActive
+            color: _isPressed
                 ? widget.color.withValues(alpha: 0.9)
                 : widget.color.withValues(alpha: 0.2),
             border: widget.isSelected
                 ? Border.all(color: Colors.cyanAccent, width: 2.5)
                 : Border.all(
-                    color: _isActive
+                    color: _isPressed
                         ? widget.color
                         : widget.color.withValues(alpha: 0.5),
                     width: 1.5,
                   ),
-            boxShadow: _isActive
+            boxShadow: _isPressed
                 ? [
                     BoxShadow(
                       color: widget.color.withValues(alpha: 0.6),
@@ -91,7 +111,7 @@ class _TriggerButtonState extends ConsumerState<TriggerButton> {
               Text(
                 widget.label,
                 style: TextStyle(
-                  color: _isActive ? Colors.white : Colors.white70,
+                  color: _isPressed ? Colors.white : Colors.white70,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),

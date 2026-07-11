@@ -52,7 +52,11 @@ class LayoutNotifier extends StateNotifier<LayoutEditorState> {
   LayoutNotifier() : super(LayoutEditorState(profile: LayoutProfile(items: [])));
 
   Future<void> load() async {
-    final profile = await LayoutManager.load();
+    final profile = await LayoutManager.loadActive();
+    state = LayoutEditorState(profile: profile);
+  }
+
+  void setProfile(LayoutProfile profile) {
     state = LayoutEditorState(profile: profile);
   }
 
@@ -87,11 +91,11 @@ class LayoutNotifier extends StateNotifier<LayoutEditorState> {
   }
 
   Future<void> save() async {
-    await LayoutManager.save(state.profile);
+    await LayoutManager.saveActiveProfile(state.profile);
   }
 
   Future<void> reset() async {
-    final profile = await LayoutManager.reset();
+    final profile = await LayoutManager.resetActive();
     state = LayoutEditorState(profile: profile);
   }
 }
