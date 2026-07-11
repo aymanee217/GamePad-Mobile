@@ -8,6 +8,12 @@ enum ControlType {
   trigger,
 }
 
+/// Button shape: circle or rectangle.
+enum ButtonShape {
+  circle,
+  rectangle,
+}
+
 /// Identifies a specific control for layout purposes.
 class ControlId {
   final ControlType type;
@@ -37,13 +43,14 @@ class ControlId {
   int get hashCode => type.hashCode ^ name.hashCode;
 }
 
-/// Position, size, and opacity for a single control.
+/// Position, size, opacity, and shape for a single control.
 class ButtonLayoutItem {
   final ControlId controlId;
-  double x; // 0.0–1.0 fraction of parent width
-  double y; // 0.0–1.0 fraction of parent height
-  double scale; // 0.5–2.0 size multiplier
-  double opacity; // 0.0–1.0
+  double x;
+  double y;
+  double scale;
+  double opacity;
+  ButtonShape shape;
 
   ButtonLayoutItem({
     required this.controlId,
@@ -51,6 +58,7 @@ class ButtonLayoutItem {
     required this.y,
     this.scale = 1.0,
     this.opacity = 1.0,
+    this.shape = ButtonShape.circle,
   });
 
   Map<String, dynamic> toJson() => {
@@ -59,6 +67,7 @@ class ButtonLayoutItem {
         'y': y,
         'scale': scale,
         'opacity': opacity,
+        'shape': shape.name,
       };
 
   factory ButtonLayoutItem.fromJson(Map<String, dynamic> json) =>
@@ -68,6 +77,9 @@ class ButtonLayoutItem {
         y: (json['y'] as num).toDouble(),
         scale: (json['scale'] as num?)?.toDouble() ?? 1.0,
         opacity: (json['opacity'] as num?)?.toDouble() ?? 1.0,
+        shape: json['shape'] != null
+            ? ButtonShape.values.byName(json['shape'])
+            : ButtonShape.circle,
       );
 
   ButtonLayoutItem copyWith({
@@ -75,6 +87,7 @@ class ButtonLayoutItem {
     double? y,
     double? scale,
     double? opacity,
+    ButtonShape? shape,
   }) =>
       ButtonLayoutItem(
         controlId: controlId,
@@ -82,6 +95,7 @@ class ButtonLayoutItem {
         y: y ?? this.y,
         scale: scale ?? this.scale,
         opacity: opacity ?? this.opacity,
+        shape: shape ?? this.shape,
       );
 }
 

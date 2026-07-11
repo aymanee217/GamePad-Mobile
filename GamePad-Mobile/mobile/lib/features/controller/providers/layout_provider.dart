@@ -35,13 +35,14 @@ class LayoutEditorState {
     }
   }
 
-  void updateItem(ControlId id, {double? x, double? y, double? scale, double? opacity}) {
+  void updateItem(ControlId id, {double? x, double? y, double? scale, double? opacity, ButtonShape? shape}) {
     for (final item in profile.items) {
       if (item.controlId == id) {
         if (x != null) item.x = x;
         if (y != null) item.y = y;
         if (scale != null) item.scale = scale;
         if (opacity != null) item.opacity = opacity;
+        if (shape != null) item.shape = shape;
         break;
       }
     }
@@ -77,17 +78,28 @@ class LayoutNotifier extends StateNotifier<LayoutEditorState> {
 
   void moveControl(ControlId id, double x, double y) {
     state.updateItem(id, x: x, y: y);
-    state = state.copyWith(profile: LayoutProfile(name: state.profile.name, items: state.profile.items));
+    _notify();
   }
 
   void resizeControl(ControlId id, double scale) {
     state.updateItem(id, scale: scale.clamp(0.5, 2.0));
-    state = state.copyWith(profile: LayoutProfile(name: state.profile.name, items: state.profile.items));
+    _notify();
   }
 
   void changeOpacity(ControlId id, double opacity) {
     state.updateItem(id, opacity: opacity.clamp(0.2, 1.0));
-    state = state.copyWith(profile: LayoutProfile(name: state.profile.name, items: state.profile.items));
+    _notify();
+  }
+
+  void changeShape(ControlId id, ButtonShape shape) {
+    state.updateItem(id, shape: shape);
+    _notify();
+  }
+
+  void _notify() {
+    state = state.copyWith(
+      profile: LayoutProfile(name: state.profile.name, items: state.profile.items),
+    );
   }
 
   Future<void> save() async {

@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/model/button_layout_item.dart' show ButtonShape;
 import '../../../../core/protocol/enums.dart' show ButtonId;
 import '../../providers/button_provider.dart';
 
 /// Pressable game button with press / release / long-press support.
-/// Also supports edit-mode visuals (selected border, drag indicator).
+/// Supports circle or rectangle shape.
 class GameButton extends ConsumerStatefulWidget {
   final String label;
   final ButtonId buttonId;
@@ -16,6 +17,9 @@ class GameButton extends ConsumerStatefulWidget {
   final bool editMode;
   final bool isSelected;
   final double opacity;
+  final ButtonShape shape;
+  final double? width;
+  final double? height;
 
   const GameButton({
     super.key,
@@ -27,6 +31,9 @@ class GameButton extends ConsumerStatefulWidget {
     this.editMode = false,
     this.isSelected = false,
     this.opacity = 1.0,
+    this.shape = ButtonShape.circle,
+    this.width,
+    this.height,
   });
 
   @override
@@ -91,6 +98,10 @@ class _GameButtonState extends ConsumerState<GameButton> {
     else if (_isPressed) effectiveColor = bgColor.withValues(alpha: 0.4);
     else effectiveColor = bgColor;
 
+    final isRect = widget.shape == ButtonShape.rectangle;
+    final w = widget.width ?? widget.size;
+    final h = widget.height ?? widget.size;
+
     return Opacity(
       opacity: widget.opacity,
       child: GestureDetector(
@@ -99,11 +110,14 @@ class _GameButtonState extends ConsumerState<GameButton> {
         onTapCancel: _onTapCancel,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 50),
-          width: widget.size,
-          height: widget.size,
+          width: w,
+          height: h,
           decoration: BoxDecoration(
             color: effectiveColor,
-            shape: BoxShape.circle,
+            borderRadius: isRect
+                ? BorderRadius.circular(8)
+                : null,
+            shape: isRect ? BoxShape.rectangle : BoxShape.circle,
             border: widget.isSelected
                 ? Border.all(color: Colors.cyanAccent, width: 2.5)
                 : _isLongPressed
@@ -129,6 +143,7 @@ class _GameButtonState extends ConsumerState<GameButton> {
                     theme.textTheme.titleLarge?.copyWith(
                       color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
+                      fontSize: isRect ? 14 : null,
                     ),
               ),
               if (widget.editMode)

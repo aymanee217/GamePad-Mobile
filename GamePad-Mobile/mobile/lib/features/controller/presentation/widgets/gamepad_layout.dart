@@ -8,7 +8,7 @@ import 'joystick.dart';
 import 'trigger_button.dart';
 
 /// Data-driven gamepad layout using Stack + Positioned for free-form placement.
-/// Supports edit mode for moving/resizing/opacity.
+/// Supports edit mode for moving/resizing/opacity/shape.
 class GamepadLayout extends ConsumerStatefulWidget {
   const GamepadLayout({super.key});
 
@@ -29,9 +29,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
 
         return Stack(
           children: [
-            // Grid overlay in edit mode
             if (editMode) _gridOverlay(w, h),
-            // Buttons
             for (final item in layout.profile.items)
               _buildControl(item, layout, w, h),
           ],
@@ -41,10 +39,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
   }
 
   Widget _gridOverlay(double w, double h) {
-    return CustomPaint(
-      size: Size(w, h),
-      painter: _GridPainter(),
-    );
+    return CustomPaint(size: Size(w, h), painter: _GridPainter());
   }
 
   Widget _buildControl(ButtonLayoutItem item, LayoutEditorState layout, double w, double h) {
@@ -75,15 +70,16 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
                 ref.read(layoutProvider.notifier).moveControl(item.controlId, newX, newY);
               }
             : null,
-        child: _controlWidget(item.controlId, size, item.opacity, editMode, isSelected),
+        child: _controlWidget(item, size, editMode, isSelected),
       ),
     );
   }
 
-  Widget _controlWidget(ControlId id, double size, double opacity, bool editMode, bool isSelected) {
+  Widget _controlWidget(ButtonLayoutItem item, double size, bool editMode, bool isSelected) {
+    final id = item.controlId;
     switch (id.type) {
       case ControlType.button:
-        return _buttonFromId(id.name, size, opacity, editMode, isSelected);
+        return _buttonFromId(id.name, size, item.opacity, editMode, isSelected, item.shape);
       case ControlType.trigger:
         return TriggerButton(
           label: id.name.toUpperCase(),
@@ -93,7 +89,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
           color: Colors.orange.shade400,
           editMode: editMode,
           isSelected: isSelected,
-          opacity: opacity,
+          opacity: item.opacity,
         );
       case ControlType.joystick:
         return Joystick(
@@ -101,22 +97,30 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
           size: size,
           editMode: editMode,
           isSelected: isSelected,
-          opacity: opacity,
+          opacity: item.opacity,
         );
     }
   }
 
-  Widget _buttonFromId(String name, double size, double opacity, bool editMode, bool isSelected) {
+  Widget _buttonFromId(String name, double size, double opacity, bool editMode, bool isSelected, ButtonShape shape) {
     final id = ButtonId.values.firstWhere((b) => b.name == name);
     final (label, color) = _buttonProps(id);
+
+    final isRect = shape == ButtonShape.rectangle;
+    final w = isRect ? size * 1.4 : size;
+    final h = isRect ? size * 0.9 : size;
+
     return GameButton(
       label: label,
       buttonId: id,
       size: size,
+      width: w,
+      height: h,
       color: color,
       editMode: editMode,
       isSelected: isSelected,
       opacity: opacity,
+      shape: shape,
     );
   }
 
@@ -146,7 +150,6 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
   }
 }
 
-/// Paints a subtle grid overlay in edit mode.
 class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/service/layout_manager.dart';
 import '../../../../core/model/button_layout_item.dart';
 import '../../providers/connection_provider.dart';
@@ -16,11 +18,19 @@ class ControllerProfilesScreen extends ConsumerStatefulWidget {
 class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScreen> {
   List<LayoutProfile> _profiles = [];
   bool _loading = true;
+  String _savedHost = AppConfig.defaultHost;
 
   @override
   void initState() {
     super.initState();
     _loadProfiles();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final host = prefs.getString(AppConfig.prefDiscoveredHost) ?? AppConfig.defaultHost;
+    setState(() => _savedHost = host);
   }
 
   Future<void> _loadProfiles() async {
@@ -56,10 +66,7 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
           textCapitalization: TextCapitalization.words,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               final name = nameController.text.trim();
@@ -90,10 +97,7 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
           textCapitalization: TextCapitalization.words,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               final name = nameController.text.trim();
@@ -139,6 +143,76 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
     }
   }
 
+  void _showConnectionSettings() {
+    final ipController = TextEditingController(text: _savedHost);
+    final portController = TextEditingController(text: AppConfig.defaultPort.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Connection Settings'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: ipController,
+              decoration: const InputDecoration(
+                labelText: 'Server IP',
+                hintText: 'e.g. 192.168.1.100',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: portController,
+              decoration: const InputDecoration(
+                labelText: 'Port',
+                hintText: '42420',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.info_outline, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'PC server must be running for connection to work.',
+                    style: Theme.of(ctx).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              final ip = ipController.text.trim();
+              final port = int.tryParse(portController.text.trim()) ?? AppConfig.defaultPort;
+              if (ip.isNotEmpty) {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString(AppConfig.prefDiscoveredHost, ip);
+                await prefs.setInt(AppConfig.prefDiscoveredPort, port);
+                ref.read(connectionProvider.notifier).setHost(ip);
+                setState(() => _savedHost = ip);
+                if (ctx.mounted) Navigator.of(ctx).pop();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Saved: $ip:$port')),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _selectProfile(int index) async {
     await LayoutManager.setActiveIndex(index);
     final profile = _profiles[index];
@@ -169,6 +243,13 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
         centerTitle: true,
         backgroundColor: theme.colorScheme.surface,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Connection Settings',
+            onPressed: _showConnectionSettings,
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -185,18 +266,45 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
                     ],
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  itemCount: _profiles.length,
-                  itemBuilder: (context, index) {
-                    final profile = _profiles[index];
-                    return _ProfileCard(
-                      profile: profile,
-                      onTap: () => _selectProfile(index),
-                      onRename: () => _renameProfile(index),
-                      onDelete: () => _deleteProfile(index),
-                    );
-                  },
+              : Column(
+                  children: [
+                    // Connection status bar
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.wifi, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            _savedHost,
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
+                          ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _showConnectionSettings,
+                            icon: const Icon(Icons.edit, size: 14),
+                            label: const Text('Settings', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Profile list
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        itemCount: _profiles.length,
+                        itemBuilder: (context, index) {
+                          final profile = _profiles[index];
+                          return _ProfileCard(
+                            profile: profile,
+                            onTap: () => _selectProfile(index),
+                            onRename: () => _renameProfile(index),
+                            onDelete: () => _deleteProfile(index),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _createProfile,
@@ -254,16 +362,12 @@ class _ProfileCard extends StatelessWidget {
                   children: [
                     Text(
                       profile.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '$buttonCount buttons, $joystickCount joysticks',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.outline),
                     ),
                   ],
                 ),
