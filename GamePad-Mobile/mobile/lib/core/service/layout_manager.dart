@@ -30,9 +30,9 @@ class LayoutManager {
         ButtonLayoutItem(controlId: ControlId.fromStick(StickId.left), x: 0.22, y: 0.72, scale: 1.0),
         ButtonLayoutItem(controlId: ControlId.fromStick(StickId.right), x: 0.78, y: 0.72, scale: 1.0),
         // Menu
-        _item(ControlId.fromButton(ButtonId.select), 0.38, 0.90, 0.8),
-        _item(ControlId.fromButton(ButtonId.guide), 0.50, 0.88, 0.9),
-        _item(ControlId.fromButton(ButtonId.start), 0.62, 0.90, 0.8),
+        _item(ControlId.fromButton(ButtonId.select), 0.38, 0.84, 1.0),
+        _item(ControlId.fromButton(ButtonId.guide), 0.50, 0.82, 1.0),
+        _item(ControlId.fromButton(ButtonId.start), 0.62, 0.84, 1.0),
       ],
     );
   }

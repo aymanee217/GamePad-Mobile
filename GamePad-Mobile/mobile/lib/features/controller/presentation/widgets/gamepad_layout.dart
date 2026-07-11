@@ -127,9 +127,9 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
         ButtonId.y => ('Y', Colors.amber),
         ButtonId.lb => ('L1', Colors.orange.shade700),
         ButtonId.rb => ('R1', Colors.orange.shade700),
-        ButtonId.start => ('●', Colors.grey.shade600),
-        ButtonId.select => ('●', Colors.grey.shade600),
-        ButtonId.guide => ('●', Colors.grey.shade400),
+        ButtonId.start => ('STA', Colors.grey.shade600),
+        ButtonId.select => ('SEL', Colors.grey.shade600),
+        ButtonId.guide => ('◉', Colors.grey.shade400),
         ButtonId.dPadUp => ('▲', Colors.blueGrey),
         ButtonId.dPadDown => ('▼', Colors.blueGrey),
         ButtonId.dPadLeft => ('◀', Colors.blueGrey),
@@ -139,9 +139,10 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
 
   double _baseSize(ControlId id) {
     if (id.type == ControlType.joystick) return 90;
-    if (id.type == ControlType.trigger) return 36;
-    if (id.name == 'guide') return 42;
-    return 44;
+    if (id.type == ControlType.trigger) return 40;
+    if (id.name == 'guide') return 50;
+    if (id.name == 'start' || id.name == 'select') return 50;
+    return 48;
   }
 }
 

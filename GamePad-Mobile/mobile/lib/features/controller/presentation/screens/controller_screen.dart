@@ -7,21 +7,29 @@ import '../../../../core/model/button_layout_item.dart';
 import '../widgets/performance_panel.dart';
 import '../widgets/gamepad_layout.dart';
 
-class ControllerScreen extends ConsumerWidget {
+class ControllerScreen extends ConsumerStatefulWidget {
   const ControllerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ControllerScreen> createState() => _ControllerScreenState();
+}
+
+class _ControllerScreenState extends ConsumerState<ControllerScreen> {
+  bool _initialized = false;
+
+  @override
+  Widget build(BuildContext context) {
     final connection = ref.watch(connectionProvider);
     final layout = ref.watch(layoutProvider);
     final hidState = ref.watch(hidProvider);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (connection.phase == ConnectionPhase.disconnected) {
+    if (!_initialized) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(connectionProvider.notifier).tryAutoReconnect();
-      }
-      ref.read(layoutProvider.notifier).load();
-    });
+        ref.read(layoutProvider.notifier).load();
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -57,16 +65,24 @@ class ControllerScreen extends ConsumerWidget {
           if (!layout.editMode) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              child: ConnectionTile(
-                state: connection,
-                onConnect: () => ref.read(connectionProvider.notifier).connect(),
-                onDisconnect: () => ref.read(connectionProvider.notifier).disconnect(),
-                onRetry: () => ref.read(connectionProvider.notifier).connect(),
-                onConnectToHost: (host) => ref.read(connectionProvider.notifier).connectToHost(host),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ConnectionTile(
+                      state: connection,
+                      onConnect: () => ref.read(connectionProvider.notifier).connect(),
+                      onDisconnect: () => ref.read(connectionProvider.notifier).disconnect(),
+                      onRetry: () => ref.read(connectionProvider.notifier).connect(),
+                      onConnectToHost: (host) => ref.read(connectionProvider.notifier).connectToHost(host),
+                    ),
+                  ),
+                  if (connection.phase == ConnectionPhase.connected) ...[
+                    const SizedBox(width: 8),
+                    PerformancePanel(metrics: connection.metrics),
+                  ],
+                ],
               ),
             ),
-            if (connection.phase == ConnectionPhase.connected)
-              PerformancePanel(metrics: connection.metrics),
           ],
           Expanded(child: layout.editMode ? const _EditorPanel() : const GamepadLayout()),
         ],
