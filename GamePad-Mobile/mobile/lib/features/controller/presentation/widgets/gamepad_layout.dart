@@ -70,15 +70,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
                   _onEditToggle?.call();
                 }
               }
-            : editMode
-                ? () {
-                    if (isSelected) {
-                      ref.read(layoutProvider.notifier).deselectControl();
-                    } else {
-                      ref.read(layoutProvider.notifier).selectControl(item.controlId);
-                    }
-                  }
-                : null,
+            : null,
         onPanUpdate: editMode
             ? (details) {
                 final newX = ((posX + size / 2 + details.delta.dx) / w).clamp(0.0, 1.0);
@@ -86,7 +78,40 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
                 ref.read(layoutProvider.notifier).moveControl(item.controlId, newX, newY);
               }
             : null,
-        child: _controlWidget(item, size, editMode, isSelected),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            _controlWidget(item, size, editMode, isSelected),
+            if (editMode)
+              Positioned(
+                top: -6,
+                right: -6,
+                child: GestureDetector(
+                  onTap: () {
+                    if (isSelected) {
+                      ref.read(layoutProvider.notifier).deselectControl();
+                    } else {
+                      ref.read(layoutProvider.notifier).selectControl(item.controlId);
+                    }
+                  },
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.cyanAccent : Colors.black87,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white54, width: 1),
+                    ),
+                    child: Icon(
+                      isSelected ? Icons.check : Icons.edit,
+                      size: 12,
+                      color: isSelected ? Colors.black : Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -166,12 +191,6 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
           alignment: Alignment.center,
           children: [
             Icon(icon, color: color, size: size * 0.5),
-            if (editMode)
-              Positioned(
-                top: 2,
-                right: 2,
-                child: const Icon(Icons.drag_indicator, size: 10, color: Colors.white38),
-              ),
           ],
         ),
       ),

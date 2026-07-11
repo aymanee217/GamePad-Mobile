@@ -105,20 +105,13 @@ class _TriggerButtonState extends ConsumerState<TriggerButton> {
                 : null,
           ),
           alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.label,
-                style: TextStyle(
-                  color: _isPressed ? Colors.white : Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              if (widget.editMode)
-                Icon(Icons.drag_indicator, size: 10, color: Colors.white38),
-            ],
+          child: Text(
+            widget.label,
+            style: TextStyle(
+              color: _isPressed ? Colors.white : Colors.white70,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ),
       ),

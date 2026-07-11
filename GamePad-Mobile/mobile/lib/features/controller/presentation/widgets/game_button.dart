@@ -134,21 +134,14 @@ class _GameButtonState extends ConsumerState<GameButton> {
                   ],
           ),
           alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                widget.label,
-                style: widget.labelStyle ??
-                    theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: isRect ? 14 : null,
-                    ),
-              ),
-              if (widget.editMode)
-                Icon(Icons.drag_indicator, size: 10, color: theme.colorScheme.onPrimary.withValues(alpha: 0.5)),
-            ],
+          child: Text(
+            widget.label,
+            style: widget.labelStyle ??
+                theme.textTheme.titleLarge?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isRect ? 14 : null,
+                ),
           ),
         ),
       ),

@@ -174,12 +174,7 @@ class _JoystickState extends ConsumerState<Joystick> {
                   ),
                 ),
               ),
-              if (widget.editMode)
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Icon(Icons.drag_indicator, size: 14, color: Colors.white54),
-                ),
+
             ],
           ),
         ),
