@@ -55,7 +55,15 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
       body: Stack(
         children: [
           // Gamepad
-          const Positioned.fill(child: GamepadLayout()),
+          Positioned.fill(
+            child: GamepadLayout(
+              onBackTap: () {
+                SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                Navigator.of(context).pop();
+              },
+              onEditToggle: () => ref.read(layoutProvider.notifier).toggleEditMode(),
+            ),
+          ),
 
           // Edit mode bottom panel
           if (editMode)
@@ -76,76 +84,28 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
               ),
             ),
 
-          // Top-left: Back button
-          Positioned(
-            top: 0,
-            left: 0,
-            child: SafeArea(
-              child: GestureDetector(
-                onTap: () {
-                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-                  Navigator.of(context).pop();
-                },
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  margin: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white12,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.arrow_back, color: Colors.white54, size: 20),
-                ),
-              ),
-            ),
-          ),
-
-          // Top-right: Edit button + connection dot
+          // Top-right: connection dot only
           Positioned(
             top: 0,
             right: 0,
             child: SafeArea(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Connection dot
-                  Builder(
-                    builder: (context) {
-                      final connection = ref.watch(connectionProvider);
-                      return Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.only(right: 8, top: 4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: connection.phase == ConnectionPhase.connected
-                              ? Colors.green
-                              : connection.phase == ConnectionPhase.connecting
-                                  ? Colors.orange
-                                  : Colors.red,
-                        ),
-                      );
-                    },
-                  ),
-                  // Edit toggle
-                  GestureDetector(
-                    onTap: () => ref.read(layoutProvider.notifier).toggleEditMode(),
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      margin: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: editMode ? Colors.cyanAccent.withValues(alpha: 0.2) : Colors.white12,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        editMode ? Icons.check : Icons.tune,
-                        color: editMode ? Colors.cyanAccent : Colors.white54,
-                        size: 20,
-                      ),
+              child: Builder(
+                builder: (context) {
+                  final connection = ref.watch(connectionProvider);
+                  return Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(right: 16, top: 12),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: connection.phase == ConnectionPhase.connected
+                          ? Colors.green
+                          : connection.phase == ConnectionPhase.connecting
+                              ? Colors.orange
+                              : Colors.red,
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -306,6 +266,8 @@ class _EditorPanel extends StatelessWidget {
   String _label(ControlId id) {
     if (id.type == ControlType.joystick) return 'Joystick ${id.name == 'left' ? 'L' : 'R'}';
     if (id.type == ControlType.trigger) return 'Trigger ${id.name.toUpperCase()}';
+    if (id.type == ControlType.back) return 'Back Button';
+    if (id.type == ControlType.edit) return 'Edit Button';
     return 'Button ${id.name.toUpperCase()}';
   }
 }

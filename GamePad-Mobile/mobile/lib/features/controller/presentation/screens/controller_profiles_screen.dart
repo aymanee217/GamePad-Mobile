@@ -144,71 +144,11 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
   }
 
   void _showConnectionSettings() {
-    final ipController = TextEditingController(text: _savedHost);
-    final portController = TextEditingController(text: AppConfig.defaultPort.toString());
-
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Connection Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ipController,
-              decoration: const InputDecoration(
-                labelText: 'Server IP',
-                hintText: 'e.g. 192.168.1.100',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: portController,
-              decoration: const InputDecoration(
-                labelText: 'Port',
-                hintText: '42420',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.info_outline, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'PC server must be running for connection to work.',
-                    style: Theme.of(ctx).textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              final ip = ipController.text.trim();
-              final port = int.tryParse(portController.text.trim()) ?? AppConfig.defaultPort;
-              if (ip.isNotEmpty) {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString(AppConfig.prefDiscoveredHost, ip);
-                await prefs.setInt(AppConfig.prefDiscoveredPort, port);
-                ref.read(connectionProvider.notifier).setHost(ip);
-                setState(() => _savedHost = ip);
-                if (ctx.mounted) Navigator.of(ctx).pop();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Saved: $ip:$port')),
-                  );
-                }
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (ctx) => _ConnectionSettingsDialog(
+        initialHost: _savedHost,
+        onSaved: (host) => setState(() => _savedHost = host),
       ),
     );
   }
@@ -310,6 +250,187 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
         onPressed: _createProfile,
         icon: const Icon(Icons.add),
         label: const Text('New Controller'),
+      ),
+    );
+  }
+}
+
+class _ConnectionSettingsDialog extends ConsumerStatefulWidget {
+  final String initialHost;
+  final ValueChanged<String> onSaved;
+
+  const _ConnectionSettingsDialog({required this.initialHost, required this.onSaved});
+
+  @override
+  ConsumerState<_ConnectionSettingsDialog> createState() => _ConnectionSettingsDialogState();
+}
+
+class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDialog> {
+  late TextEditingController _ipController;
+  late TextEditingController _portController;
+  bool _saving = false;
+  bool _saved = false;
+  ConnectionPhase? _resultPhase;
+
+  @override
+  void initState() {
+    super.initState();
+    _ipController = TextEditingController(text: widget.initialHost);
+    _portController = TextEditingController(text: AppConfig.defaultPort.toString());
+  }
+
+  @override
+  void dispose() {
+    _ipController.dispose();
+    _portController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAndConnect() async {
+    final ip = _ipController.text.trim();
+    final port = int.tryParse(_portController.text.trim()) ?? AppConfig.defaultPort;
+    if (ip.isEmpty) return;
+
+    setState(() {
+      _saving = true;
+      _resultPhase = null;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConfig.prefDiscoveredHost, ip);
+    await prefs.setInt(AppConfig.prefDiscoveredPort, port);
+    ref.read(connectionProvider.notifier).setHost(ip);
+    ref.read(connectionProvider.notifier).clearUserDisconnected();
+    widget.onSaved(ip);
+
+    await ref.read(connectionProvider.notifier).connectToHost(ip, port: port);
+
+    if (!mounted) return;
+    final phase = ref.read(connectionProvider).phase;
+    setState(() {
+      _saving = false;
+      _saved = true;
+      _resultPhase = phase;
+    });
+
+    if (phase == ConnectionPhase.connected) {
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: const Text('Connection Settings'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _ipController,
+            decoration: const InputDecoration(
+              labelText: 'Server IP',
+              hintText: 'e.g. 192.168.1.100',
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _portController,
+            decoration: const InputDecoration(
+              labelText: 'Port',
+              hintText: '42420',
+            ),
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.info_outline, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'PC server must be running for connection to work.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          if (_saved) ...[
+            const SizedBox(height: 16),
+            _buildStatusIndicator(),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        if (_resultPhase == ConnectionPhase.failed)
+          FilledButton(
+            onPressed: _saveAndConnect,
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Retry'),
+          )
+        else
+          FilledButton(
+            onPressed: _saving ? null : _saveAndConnect,
+            child: _saving
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Save & Connect'),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildStatusIndicator() {
+    final phase = _resultPhase;
+    if (phase == null) return const SizedBox.shrink();
+
+    Color color;
+    IconData icon;
+    String text;
+
+    switch (phase) {
+      case ConnectionPhase.connected:
+        color = Colors.green;
+        icon = Icons.check_circle;
+        text = 'Connecté!';
+        break;
+      case ConnectionPhase.connecting:
+        color = Colors.orange;
+        icon = Icons.sync;
+        text = 'Connexion en cours...';
+        break;
+      default:
+        color = Colors.red;
+        icon = Icons.error;
+        text = 'Échoué - le serveur est-il en marche?';
+        break;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: color, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
       ),
     );
   }

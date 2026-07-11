@@ -6,6 +6,8 @@ enum ControlType {
   button,
   joystick,
   trigger,
+  back,
+  edit,
 }
 
 /// Button shape: circle or rectangle.

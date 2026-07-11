@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../model/button_layout_item.dart' show ButtonLayoutItem, ButtonShape, ControlId, LayoutProfile;
+import '../model/button_layout_item.dart' show ButtonLayoutItem, ButtonShape, ControlId, ControlType, LayoutProfile;
 import '../protocol/enums.dart' show ButtonId, TriggerId, StickId;
 
 /// Manages multiple named controller layout profiles.
@@ -30,6 +30,8 @@ class LayoutManager {
         _item(ControlId.fromButton(ButtonId.select), 0.38, 0.84, 1.0),
         _item(ControlId.fromButton(ButtonId.guide), 0.50, 0.82, 1.0),
         _item(ControlId.fromButton(ButtonId.start), 0.62, 0.84, 1.0),
+        ButtonLayoutItem(controlId: const ControlId(type: ControlType.back, name: 'back'), x: 0.06, y: 0.04, scale: 1.0, opacity: 0.6),
+        ButtonLayoutItem(controlId: const ControlId(type: ControlType.edit, name: 'edit'), x: 0.94, y: 0.04, scale: 1.0, opacity: 0.6),
       ],
     );
   }

@@ -10,13 +10,19 @@ import 'trigger_button.dart';
 /// Data-driven gamepad layout using Stack + Positioned for free-form placement.
 /// Supports edit mode for moving/resizing/opacity/shape.
 class GamepadLayout extends ConsumerStatefulWidget {
-  const GamepadLayout({super.key});
+  final VoidCallback? onBackTap;
+  final VoidCallback? onEditToggle;
+
+  const GamepadLayout({super.key, this.onBackTap, this.onEditToggle});
 
   @override
   ConsumerState<GamepadLayout> createState() => _GamepadLayoutState();
 }
 
 class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
+  VoidCallback? get _onBackTap => widget.onBackTap;
+  VoidCallback? get _onEditToggle => widget.onEditToggle;
+
   @override
   Widget build(BuildContext context) {
     final layout = ref.watch(layoutProvider);
@@ -50,19 +56,29 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
     final posX = item.x * w - size / 2;
     final posY = item.y * h - size / 2;
 
+    final isUtility = item.controlId.type == ControlType.back || item.controlId.type == ControlType.edit;
+
     return Positioned(
       left: posX,
       top: posY,
       child: GestureDetector(
-        onTap: editMode
+        onTap: isUtility && !editMode
             ? () {
-                if (isSelected) {
-                  ref.read(layoutProvider.notifier).deselectControl();
-                } else {
-                  ref.read(layoutProvider.notifier).selectControl(item.controlId);
+                if (item.controlId.type == ControlType.back) {
+                  _onBackTap?.call();
+                } else if (item.controlId.type == ControlType.edit) {
+                  _onEditToggle?.call();
                 }
               }
-            : null,
+            : editMode
+                ? () {
+                    if (isSelected) {
+                      ref.read(layoutProvider.notifier).deselectControl();
+                    } else {
+                      ref.read(layoutProvider.notifier).selectControl(item.controlId);
+                    }
+                  }
+                : null,
         onPanUpdate: editMode
             ? (details) {
                 final newX = ((posX + size / 2 + details.delta.dx) / w).clamp(0.0, 1.0);
@@ -99,7 +115,67 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
           isSelected: isSelected,
           opacity: item.opacity,
         );
+      case ControlType.back:
+        return _utilityIcon(
+          icon: Icons.arrow_back,
+          label: 'Back',
+          size: size,
+          opacity: item.opacity,
+          editMode: editMode,
+          isSelected: isSelected,
+          color: Colors.white54,
+        );
+      case ControlType.edit:
+        return _utilityIcon(
+          icon: Icons.tune,
+          label: 'Edit',
+          size: size,
+          opacity: item.opacity,
+          editMode: editMode,
+          isSelected: isSelected,
+          color: Colors.cyanAccent,
+        );
     }
+  }
+
+  Widget _utilityIcon({
+    required IconData icon,
+    required String label,
+    required double size,
+    required double opacity,
+    required bool editMode,
+    required bool isSelected,
+    required Color color,
+  }) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.cyanAccent.withValues(alpha: 0.15) : Colors.white12,
+          borderRadius: BorderRadius.circular(12),
+          border: editMode
+              ? Border.all(
+                  color: isSelected ? Colors.cyanAccent : Colors.white24,
+                  width: isSelected ? 2 : 1,
+                )
+              : null,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            const Icon(icon, color: color, size: size * 0.5),
+            if (editMode)
+              Positioned(
+                top: 2,
+                right: 2,
+                child: const Icon(Icons.drag_indicator, size: 10, color: Colors.white38),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buttonFromId(String name, double size, double opacity, bool editMode, bool isSelected, ButtonShape shape) {
@@ -144,6 +220,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
   double _baseSize(ControlId id) {
     if (id.type == ControlType.joystick) return 90;
     if (id.type == ControlType.trigger) return 40;
+    if (id.type == ControlType.back || id.type == ControlType.edit) return 44;
     if (id.name == 'guide') return 50;
     if (id.name == 'start' || id.name == 'select') return 50;
     return 48;

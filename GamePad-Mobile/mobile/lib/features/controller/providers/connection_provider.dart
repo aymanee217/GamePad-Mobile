@@ -85,15 +85,16 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   }
 
   /// Connect directly to a specific host (bypass discovery).
-  Future<void> connectToHost(String host) async {
+  Future<void> connectToHost(String host, {int? port}) async {
     if (state.phase == ConnectionPhase.connected) return;
     _userDisconnected = false;
 
-    state = state.copyWith(host: host, serverName: host);
+    final effectivePort = port ?? AppConfig.defaultPort;
+    state = state.copyWith(host: host, port: effectivePort, serverName: host);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConfig.prefDiscoveredHost, host);
-    await prefs.setInt(AppConfig.prefDiscoveredPort, AppConfig.defaultPort);
+    await prefs.setInt(AppConfig.prefDiscoveredPort, effectivePort);
 
     await _doConnect();
   }
