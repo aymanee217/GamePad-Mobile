@@ -79,7 +79,10 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
                 onResize: (id, v) => ref.read(layoutProvider.notifier).resizeControl(id, v),
                 onOpacity: (id, v) => ref.read(layoutProvider.notifier).changeOpacity(id, v),
                 onShape: (id, s) => ref.read(layoutProvider.notifier).changeShape(id, s),
-                onSave: () => ref.read(layoutProvider.notifier).save(),
+                onSave: () {
+                  ref.read(layoutProvider.notifier).save();
+                  ref.read(layoutProvider.notifier).toggleEditMode();
+                },
                 onReset: () => ref.read(layoutProvider.notifier).reset(),
               ),
             ),
@@ -144,10 +147,13 @@ class _EditorPanel extends StatelessWidget {
     final selected = layout.selectedControl;
     final item = selected != null ? layout.find(selected) : null;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.black87,
+        color: item != null
+            ? Colors.black.withValues(alpha: 0.92)
+            : Colors.black.withValues(alpha: 0.65),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(

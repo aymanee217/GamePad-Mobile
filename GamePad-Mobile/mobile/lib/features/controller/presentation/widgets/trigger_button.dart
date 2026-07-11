@@ -82,7 +82,7 @@ class _TriggerButtonState extends ConsumerState<TriggerButton> {
           height: widget.height,
           decoration: BoxDecoration(
             shape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(widget.width / 2),
+            borderRadius: BorderRadius.circular(10),
             color: _isPressed
                 ? widget.color.withValues(alpha: 0.9)
                 : widget.color.withValues(alpha: 0.2),

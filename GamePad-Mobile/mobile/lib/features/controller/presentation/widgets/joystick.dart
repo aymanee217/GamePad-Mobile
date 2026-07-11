@@ -110,6 +110,61 @@ class _JoystickState extends ConsumerState<Joystick> {
     });
   }
 
+  Widget _buildVisual(ThemeData theme, Offset thumbOffset) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.colorScheme.surfaceContainerHighest,
+            border: widget.isSelected
+                ? Border.all(color: Colors.cyanAccent, width: 2.5)
+                : Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3), width: 2),
+          ),
+        ),
+        Container(
+          width: _deadZone * 2,
+          height: _deadZone * 2,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.colorScheme.outline.withValues(alpha: 0.08),
+          ),
+        ),
+        Transform.translate(
+          offset: widget.editMode ? Offset.zero : thumbOffset,
+          child: Container(
+            width: _thumbRadius * 2,
+            height: _thumbRadius * 2,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _isDragging
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.primary.withValues(alpha: 0.7),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              widget.stickId == StickId.left ? 'L' : 'R',
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -120,64 +175,14 @@ class _JoystickState extends ConsumerState<Joystick> {
       child: SizedBox(
         width: widget.size,
         height: widget.size,
-        child: GestureDetector(
-          onPanStart: _onPanStart,
-          onPanUpdate: _onPanUpdate,
-          onPanEnd: _onPanEnd,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: widget.size,
-                height: widget.size,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  border: widget.isSelected
-                      ? Border.all(color: Colors.cyanAccent, width: 2.5)
-                      : Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3), width: 2),
-                ),
+        child: widget.editMode
+            ? _buildVisual(theme, thumbOffset)
+            : GestureDetector(
+                onPanStart: _onPanStart,
+                onPanUpdate: _onPanUpdate,
+                onPanEnd: _onPanEnd,
+                child: _buildVisual(theme, thumbOffset),
               ),
-              Container(
-                width: _deadZone * 2,
-                height: _deadZone * 2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.outline.withValues(alpha: 0.08),
-                ),
-              ),
-              Transform.translate(
-                offset: thumbOffset,
-                child: Container(
-                  width: _thumbRadius * 2,
-                  height: _thumbRadius * 2,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _isDragging
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.primary.withValues(alpha: 0.7),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.4),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    widget.stickId == StickId.left ? 'L' : 'R',
-                    style: TextStyle(
-                      color: theme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-
-            ],
-          ),
-        ),
       ),
     );
   }

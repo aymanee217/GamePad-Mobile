@@ -366,7 +366,10 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
       ),
       actions: [
         TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          onPressed: _saving ? null : () {
+            FocusScope.of(context).unfocus();
+            Navigator.of(context).pop();
+          },
           child: const Text('Cancel'),
         ),
         if (_resultPhase == ConnectionPhase.failed)
