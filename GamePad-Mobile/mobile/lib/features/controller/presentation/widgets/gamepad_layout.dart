@@ -165,7 +165,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            const Icon(icon, color: color, size: size * 0.5),
+            Icon(icon, color: color, size: size * 0.5),
             if (editMode)
               Positioned(
                 top: 2,
