@@ -270,6 +270,7 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
   late TextEditingController _portController;
   bool _saving = false;
   bool _saved = false;
+  bool _scanning = false;
   ConnectionPhase? _resultPhase;
   late int _playerId;
 
@@ -284,6 +285,37 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
   Future<void> _loadPlayerId() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() => _playerId = prefs.getInt(AppConfig.prefPlayerId) ?? 1);
+  }
+
+  Future<void> _scanForServer() async {
+    setState(() {
+      _scanning = true;
+      _resultPhase = null;
+      _saved = false;
+    });
+
+    final discovery = ref.read(discoveryServiceProvider);
+    final result = await discovery.discover(
+      timeoutMs: AppConfig.discoveryTimeoutMs,
+      retries: AppConfig.discoveryRetries,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _scanning = false);
+
+    if (result != null) {
+      setState(() {
+        _ipController.text = result.address.address;
+        _saved = true;
+        _resultPhase = ConnectionPhase.connected;
+      });
+    } else {
+      setState(() {
+        _saved = true;
+        _resultPhase = ConnectionPhase.failed;
+      });
+    }
   }
 
   @override
@@ -337,13 +369,36 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
-            controller: _ipController,
-            decoration: const InputDecoration(
-              labelText: 'Server IP',
-              hintText: 'e.g. 192.168.1.100',
-            ),
-            keyboardType: TextInputType.number,
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _ipController,
+                  decoration: const InputDecoration(
+                    labelText: 'Server IP',
+                    hintText: 'e.g. 192.168.1.100',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _scanning ? null : _scanForServer,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: _scanning ? Colors.orange.withValues(alpha: 0.2) : Colors.cyanAccent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _scanning ? Colors.orange : Colors.cyanAccent.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: _scanning
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange))
+                      : const Icon(Icons.radar, size: 20, color: Colors.cyanAccent),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           TextField(

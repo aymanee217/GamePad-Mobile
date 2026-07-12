@@ -1,10 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "0BOq8j3PNuI=",
+  "dgSpecHash": "Ytx2susnFgA=",
   "success": true,
   "projectFilePath": "C:\\Users\\Aymane\\Desktop\\Manette\\GamePad-Mobile\\pc-wpf\\GamePadServer.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Aymane\\.nuget\\packages\\nefarius.vigem.client\\1.19.197\\nefarius.vigem.client.1.19.197.nupkg.sha512"
+    "C:\\Users\\Aymane\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.28\\microsoft.net.illink.tasks.8.0.28.nupkg.sha512",
+    "C:\\Users\\Aymane\\.nuget\\packages\\nefarius.vigem.client\\1.19.197\\nefarius.vigem.client.1.19.197.nupkg.sha512",
+    "C:\\Users\\Aymane\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.28\\microsoft.netcore.app.runtime.win-x64.8.0.28.nupkg.sha512",
+    "C:\\Users\\Aymane\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.28\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.28.nupkg.sha512",
+    "C:\\Users\\Aymane\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.28\\microsoft.aspnetcore.app.runtime.win-x64.8.0.28.nupkg.sha512"
   ],
   "logs": []
 }
