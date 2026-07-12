@@ -78,4 +78,11 @@ class PacketEncoder {
       payload: [playerId.clamp(1, 4), trigger.value, clamped],
     );
   }
+
+  Packet encodeDisconnect() {
+    return Packet(
+      header: _buildHeader(MessageType.disconnect),
+      payload: [playerId.clamp(1, 4)],
+    );
+  }
 }

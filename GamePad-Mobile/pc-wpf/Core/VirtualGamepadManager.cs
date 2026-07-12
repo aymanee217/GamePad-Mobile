@@ -79,6 +79,24 @@ public class VirtualGamepadManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// Disconnects a specific player: resets controller, clears state.
+    /// </summary>
+    public void DisconnectPlayer(int playerId)
+    {
+        lock (_lock)
+        {
+            if (_mappers.TryGetValue(playerId, out var mapper))
+            {
+                mapper.Reset();
+                Logger.Info($"Player {playerId} controller reset to neutral");
+            }
+
+            _phoneIps.Remove(playerId);
+            _lastActivity.Remove(playerId);
+        }
+    }
+
     public void Dispose()
     {
         if (_disposed) return;

@@ -87,7 +87,7 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
               ),
             ),
 
-          // Top-right: connection dot only
+          // Top-right: connection status + disconnect
           Positioned(
             top: 0,
             right: 0,
@@ -95,17 +95,44 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
               child: Builder(
                 builder: (context) {
                   final connection = ref.watch(connectionProvider);
-                  return Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(right: 16, top: 12),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: connection.phase == ConnectionPhase.connected
-                          ? Colors.green
-                          : connection.phase == ConnectionPhase.connecting
-                              ? Colors.orange
-                              : Colors.red,
+                  final isConnected = connection.phase == ConnectionPhase.connected;
+                  return GestureDetector(
+                    onTap: isConnected
+                        ? () {
+                            ref.read(connectionProvider.notifier).sendDisconnect();
+                            ref.read(connectionProvider.notifier).disconnect();
+                            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                            Navigator.of(context).pop();
+                          }
+                        : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(right: 12, top: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isConnected
+                                  ? Colors.green
+                                  : connection.phase == ConnectionPhase.connecting
+                                      ? Colors.orange
+                                      : Colors.red,
+                            ),
+                          ),
+                          if (isConnected) ...[
+                            const SizedBox(width: 6),
+                            const Icon(Icons.link_off, size: 14, color: Colors.white70),
+                          ],
+                        ],
+                      ),
                     ),
                   );
                 },

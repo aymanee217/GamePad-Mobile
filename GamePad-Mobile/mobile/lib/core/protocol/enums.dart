@@ -8,7 +8,8 @@ enum MessageType {
   macroEvent(0x06),
   ping(0x07),
   pong(0x08),
-  triggerEvent(0x09);
+  triggerEvent(0x09),
+  disconnect(0x0A);
 
   final int value;
   const MessageType(this.value);

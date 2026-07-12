@@ -180,6 +180,12 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     _client.send(data);
   }
 
+  void sendDisconnect() {
+    if (state.phase != ConnectionPhase.connected) return;
+    final packet = _encoder.encodeDisconnect();
+    _client.send(packet.toBytes());
+  }
+
   void _onPacket(Packet packet) {
     if (packet.header.type == MessageType.pong) {
       _perf.recordPong(packet.header.sequenceNumber);

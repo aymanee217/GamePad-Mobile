@@ -14,6 +14,7 @@ public enum MessageType : byte
     Ping = 0x07,
     Pong = 0x08,
     TriggerEvent = 0x09,
+    Disconnect = 0x0A,
 }
 
 /// <summary>

@@ -55,6 +55,14 @@ public partial class MainWindow : Window
         var playerId = packet.Payload[0];
         if (playerId < 1 || playerId > VirtualGamepadManager.MaxPlayers) return;
 
+        // Handle disconnect
+        if (packet.Header.Type == MessageType.Disconnect)
+        {
+            _manager.DisconnectPlayer(playerId);
+            Logger.Info($"Player {playerId} DISCONNECTED by phone");
+            return;
+        }
+
         // Strip playerId from payload for the InputMapper (old format)
         var strippedPayload = new byte[packet.Payload.Length - 1];
         Buffer.BlockCopy(packet.Payload, 1, strippedPayload, 0, strippedPayload.Length);
