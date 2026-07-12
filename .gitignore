@@ -31,6 +31,7 @@ pc-server/bin/
 pc-server/obj/
 pc-wpf/bin/
 pc-wpf/obj/
+publish/
 
 # IDE
 .vs/
