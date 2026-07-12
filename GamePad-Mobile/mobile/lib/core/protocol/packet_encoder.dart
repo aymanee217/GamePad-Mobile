@@ -7,10 +7,12 @@ class PacketEncoder {
   final int _version;
   int _sequenceNumber = 0;
   final int _sessionStartMs;
+  int playerId;
 
   PacketEncoder({
     int version = 0x01,
     int? sessionStartMs,
+    this.playerId = 1,
   })  : _version = version,
         _sessionStartMs = sessionStartMs ?? DateTime.now().millisecondsSinceEpoch;
 
@@ -32,17 +34,17 @@ class PacketEncoder {
   }
 
   Packet encodeButtonPress(ButtonId buttonId) {
-    return Packet.buttonEvent(_buildHeader(MessageType.buttonEvent), buttonId, ButtonState.pressed);
+    return Packet.buttonEvent(_buildHeader(MessageType.buttonEvent), buttonId, ButtonState.pressed, playerId);
   }
 
   Packet encodeButtonRelease(ButtonId buttonId) {
     return Packet.buttonEvent(
-        _buildHeader(MessageType.buttonEvent), buttonId, ButtonState.released);
+        _buildHeader(MessageType.buttonEvent), buttonId, ButtonState.released, playerId);
   }
 
   Packet encodeButtonLongPress(ButtonId buttonId) {
     return Packet.buttonEvent(
-        _buildHeader(MessageType.buttonEvent), buttonId, ButtonState.longPressed);
+        _buildHeader(MessageType.buttonEvent), buttonId, ButtonState.longPressed, playerId);
   }
 
   Packet encodePing() {
@@ -59,6 +61,7 @@ class PacketEncoder {
     return Packet(
       header: _buildHeader(MessageType.axisEvent),
       payload: [
+        playerId.clamp(1, 4),
         stick.value,
         (xClamped >> 8) & 0xFF,
         xClamped & 0xFF,
@@ -72,7 +75,7 @@ class PacketEncoder {
     final clamped = value.clamp(0, 255);
     return Packet(
       header: _buildHeader(MessageType.triggerEvent),
-      payload: [trigger.value, clamped],
+      payload: [playerId.clamp(1, 4), trigger.value, clamped],
     );
   }
 }

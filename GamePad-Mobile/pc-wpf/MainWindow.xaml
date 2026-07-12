@@ -1,0 +1,47 @@
+<Window x:Class="GamePadServer.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GamePad Server" Height="500" Width="650"
+        WindowStartupLocation="CenterScreen"
+        Background="#1a1a2e"
+        Closing="Window_Closing">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="🎮 GamePad Server" Foreground="#e0e0e0" FontSize="22" FontWeight="Bold"/>
+        </StackPanel>
+
+        <!-- Status bar -->
+        <Border Grid.Row="1" Background="#16213e" CornerRadius="8" Padding="12,8" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="StatusDot" Width="10" Height="10" Fill="#4CAF50" Margin="0,0,8,0"/>
+                <TextBlock x:Name="StatusText" Text="Listening on UDP 42420" Foreground="#b0b0b0" FontSize="13"/>
+                <TextBlock Text="  |  " Foreground="#555"/>
+                <TextBlock x:Name="UptimeText" Text="Uptime: 0s" Foreground="#b0b0b0" FontSize="13"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Player cards -->
+        <UniformGrid Grid.Row="2" Columns="2" Rows="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border x:Name="P1" Margin="4" Background="#16213e" CornerRadius="12" Padding="16"/>
+            <Border x:Name="P2" Margin="4" Background="#16213e" CornerRadius="12" Padding="16"/>
+            <Border x:Name="P3" Margin="4" Background="#16213e" CornerRadius="12" Padding="16"/>
+            <Border x:Name="P4" Margin="4" Background="#16213e" CornerRadius="12" Padding="16"/>
+        </UniformGrid>
+
+        <!-- Bottom stats -->
+        <Border Grid.Row="3" Background="#0f3460" CornerRadius="8" Padding="12,8" Margin="0,12,0,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="StatsText" Text="Packets: 0 | Rate: 0 pkt/s | Loss: 0%" Foreground="#8899aa" FontSize="12"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -271,12 +271,19 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
   bool _saving = false;
   bool _saved = false;
   ConnectionPhase? _resultPhase;
+  late int _playerId;
 
   @override
   void initState() {
     super.initState();
     _ipController = TextEditingController(text: widget.initialHost);
     _portController = TextEditingController(text: AppConfig.defaultPort.toString());
+    _loadPlayerId();
+  }
+
+  Future<void> _loadPlayerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => _playerId = prefs.getInt(AppConfig.prefPlayerId) ?? 1);
   }
 
   @override
@@ -299,8 +306,10 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConfig.prefDiscoveredHost, ip);
     await prefs.setInt(AppConfig.prefDiscoveredPort, port);
+    await prefs.setInt(AppConfig.prefPlayerId, _playerId);
     ref.read(connectionProvider.notifier).setHost(ip);
     ref.read(connectionProvider.notifier).clearUserDisconnected();
+    ref.read(connectionProvider.notifier).setPlayerId(_playerId);
     widget.onSaved(ip);
 
     await ref.read(connectionProvider.notifier).connectToHost(ip, port: port);
@@ -344,6 +353,41 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
               hintText: '42420',
             ),
             keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+          Text('Player Number', style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            children: [1, 2, 3, 4].map((id) {
+              final selected = _playerId == id;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => setState(() => _playerId = id),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: selected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected ? theme.colorScheme.primary : theme.colorScheme.outline.withValues(alpha: 0.3),
+                        width: selected ? 2 : 1,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'P$id',
+                      style: TextStyle(
+                        color: selected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 12),
           Row(

@@ -33,10 +33,11 @@ class Packet {
     PacketHeader header,
     ButtonId buttonId,
     ButtonState state,
+    int playerId,
   ) {
     return Packet(
       header: header,
-      payload: [buttonId.value, state.value],
+      payload: [playerId.clamp(1, 4), buttonId.value, state.value],
     );
   }
 

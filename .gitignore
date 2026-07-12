@@ -29,6 +29,8 @@ mobile/ios/build/
 # .NET
 pc-server/bin/
 pc-server/obj/
+pc-wpf/bin/
+pc-wpf/obj/
 
 # IDE
 .vs/

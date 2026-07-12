@@ -26,6 +26,7 @@ class ConnectionState {
   final int port;
   final String? serverName;
   final MetricsSnapshot metrics;
+  final int playerId;
 
   const ConnectionState({
     this.phase = ConnectionPhase.disconnected,
@@ -33,6 +34,7 @@ class ConnectionState {
     this.port = AppConfig.defaultPort,
     this.serverName,
     this.metrics = const MetricsSnapshot(),
+    this.playerId = 1,
   });
 
   ConnectionState copyWith({
@@ -41,6 +43,7 @@ class ConnectionState {
     int? port,
     String? serverName,
     MetricsSnapshot? metrics,
+    int? playerId,
   }) {
     return ConnectionState(
       phase: phase ?? this.phase,
@@ -48,6 +51,7 @@ class ConnectionState {
       port: port ?? this.port,
       serverName: serverName ?? this.serverName,
       metrics: metrics ?? this.metrics,
+      playerId: playerId ?? this.playerId,
     );
   }
 }
@@ -70,6 +74,8 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
     if (!AppConfig.autoReconnect) return;
     if (_userDisconnected) return;
     if (state.phase != ConnectionPhase.disconnected) return;
+
+    await loadPlayerId();
 
     final prefs = await SharedPreferences.getInstance();
     var savedHost = prefs.getString(AppConfig.prefDiscoveredHost);
@@ -190,6 +196,21 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
 
   void setHost(String host) {
     state = state.copyWith(host: host);
+  }
+
+  Future<void> setPlayerId(int id) async {
+    final clamped = id.clamp(1, 4);
+    state = state.copyWith(playerId: clamped);
+    _encoder.playerId = clamped;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(AppConfig.prefPlayerId, clamped);
+  }
+
+  Future<void> loadPlayerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt(AppConfig.prefPlayerId) ?? 1;
+    state = state.copyWith(playerId: id);
+    _encoder.playerId = id;
   }
 }
 

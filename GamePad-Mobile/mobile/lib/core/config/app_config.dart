@@ -17,6 +17,7 @@ class AppConfig {
   /// SharedPreferences keys
   static const String prefDiscoveredHost = 'discovered_host';
   static const String prefDiscoveredPort = 'discovered_port';
+  static const String prefPlayerId = 'player_id';
 
   /// Whether to auto-reconnect to the last discovered server on start.
   static const bool autoReconnect = true;

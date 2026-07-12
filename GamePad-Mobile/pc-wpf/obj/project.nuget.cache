@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "0BOq8j3PNuI=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Aymane\\Desktop\\Manette\\GamePad-Mobile\\pc-wpf\\GamePadServer.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Aymane\\.nuget\\packages\\nefarius.vigem.client\\1.19.197\\nefarius.vigem.client.1.19.197.nupkg.sha512"
+  ],
+  "logs": []
+}

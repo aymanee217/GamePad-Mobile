@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "GamePadServer/1.0.0": {
+        "dependencies": {
+          "Nefarius.ViGEm.Client": "1.19.197"
+        },
+        "runtime": {
+          "GamePadServer.dll": {}
+        }
+      },
+      "Nefarius.ViGEm.Client/1.19.197": {
+        "runtime": {
+          "lib/net6.0/Nefarius.ViGEm.Client.dll": {
+            "assemblyVersion": "1.19.197.0",
+            "fileVersion": "1.19.197.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "GamePadServer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Nefarius.ViGEm.Client/1.19.197": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OAvgOYfJrmH2JqIjulWHxjPqGKtMUi/3q+Pg2FIc5we8gU1u85ZoYspx+/up1yoWUDunJ1L11XTurW4MzyYW5w==",
+      "path": "nefarius.vigem.client/1.19.197",
+      "hashPath": "nefarius.vigem.client.1.19.197.nupkg.sha512"
+    }
+  }
+}
