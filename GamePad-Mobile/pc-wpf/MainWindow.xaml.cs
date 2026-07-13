@@ -40,6 +40,7 @@ public partial class MainWindow : Window
 
         Loaded += (_, _) =>
         {
+            EnsureFirewallRule();
             _server.Start();
             Logger.Info("GamePad Server WPF started");
         };
@@ -194,5 +195,37 @@ public partial class MainWindow : Window
         _manager.ResetAll();
         _server.Dispose();
         _manager.Dispose();
+    }
+
+    private static void EnsureFirewallRule()
+    {
+        try
+        {
+            var ruleName = "GamePadServer UDP";
+            var check = new ProcessStartInfo("netsh", $"advfirewall firewall show rule name=\"{ruleName}\"")
+            {
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+            };
+            var proc = Process.Start(check);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit();
+
+            if (output.Contains(ruleName)) return;
+
+            var add = new ProcessStartInfo("netsh", $"advfirewall firewall add rule name=\"{ruleName}\" dir=in action=allow protocol=udp localport={Core.Configuration.UdpPort}")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            };
+            Process.Start(add)?.WaitForExit();
+
+            Logger.Info($"Firewall rule '{ruleName}' created for UDP port {Core.Configuration.UdpPort}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"Could not create firewall rule: {ex.Message}");
+        }
     }
 }

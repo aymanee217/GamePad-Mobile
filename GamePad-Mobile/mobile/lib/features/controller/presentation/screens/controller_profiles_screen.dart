@@ -317,11 +317,20 @@ class _ConnectionSettingsDialogState extends ConsumerState<_ConnectionSettingsDi
     setState(() => _scanning = false);
 
     if (result != null) {
+      final ip = result.address.address;
+      final port = AppConfig.defaultPort;
       setState(() {
-        _ipController.text = result.address.address;
+        _ipController.text = ip;
         _saved = true;
         _resultPhase = ConnectionPhase.connected;
       });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConfig.prefDiscoveredHost, ip);
+      await prefs.setInt(AppConfig.prefDiscoveredPort, port);
+      ref.read(connectionProvider.notifier).setHost(ip);
+      ref.read(connectionProvider.notifier).clearUserDisconnected();
+      await ref.read(connectionProvider.notifier).connectToHost(ip, port: port);
+      if (mounted) Navigator.of(context).pop();
     } else {
       setState(() {
         _saved = true;
