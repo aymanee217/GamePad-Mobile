@@ -125,8 +125,8 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
         return TriggerButton(
           label: id.name.toUpperCase(),
           triggerId: TriggerId.values.firstWhere((t) => t.name == id.name),
-          width: size * 1.2,
-          height: size * 1.6,
+          width: size * 1.4,
+          height: size * 0.9,
           color: Colors.orange.shade400,
           editMode: editMode,
           isSelected: isSelected,
