@@ -70,6 +70,12 @@ class _TriggerButtonState extends ConsumerState<TriggerButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Color effectiveColor;
+    if (_isPressed) effectiveColor = widget.color.withValues(alpha: 0.4);
+    else effectiveColor = widget.color;
+
     return Opacity(
       opacity: widget.opacity,
       child: GestureDetector(
@@ -81,36 +87,29 @@ class _TriggerButtonState extends ConsumerState<TriggerButton> {
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
+            color: effectiveColor,
+            borderRadius: BorderRadius.circular(8),
             shape: BoxShape.rectangle,
-            borderRadius: BorderRadius.circular(10),
-            color: _isPressed
-                ? widget.color.withValues(alpha: 0.9)
-                : widget.color.withValues(alpha: 0.2),
             border: widget.isSelected
                 ? Border.all(color: Colors.cyanAccent, width: 2.5)
-                : Border.all(
-                    color: _isPressed
-                        ? widget.color
-                        : widget.color.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-            boxShadow: _isPressed
-                ? [
-                    BoxShadow(
-                      color: widget.color.withValues(alpha: 0.6),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ]
                 : null,
+            boxShadow: _isPressed
+                ? []
+                : [
+                    BoxShadow(
+                      color: widget.color.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           alignment: Alignment.center,
           child: Text(
             widget.label,
-            style: TextStyle(
-              color: _isPressed ? Colors.white : Colors.white70,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
-              fontSize: 12,
+              fontSize: 14,
             ),
           ),
         ),

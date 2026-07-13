@@ -69,7 +69,7 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
   ConnectionNotifier(this._client, this._encoder, this._discovery)
       : super(const ConnectionState());
 
-  /// Tries auto-reconnect using saved IP. Call once at startup.
+  /// Auto-discovers server on LAN, then connects. Falls back to saved IP.
   Future<void> tryAutoReconnect() async {
     if (!AppConfig.autoReconnect) return;
     if (_userDisconnected) return;
@@ -77,11 +77,32 @@ class ConnectionNotifier extends StateNotifier<ConnectionState> {
 
     await loadPlayerId();
 
+    // Phase 1: try discovery first
+    state = state.copyWith(phase: ConnectionPhase.discovering);
+    final discovered = await _discovery.discover(
+      timeoutMs: AppConfig.discoveryTimeoutMs,
+      retries: AppConfig.discoveryRetries,
+    );
+
+    if (discovered != null) {
+      // Found server via broadcast — use it
+      state = state.copyWith(
+        host: discovered.address.address,
+        port: AppConfig.defaultPort,
+        serverName: discovered.serverName,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConfig.prefDiscoveredHost, discovered.address.address);
+      await prefs.setInt(AppConfig.prefDiscoveredPort, AppConfig.defaultPort);
+      await _doConnect();
+      return;
+    }
+
+    // Phase 2: discovery failed — fall back to saved IP
     final prefs = await SharedPreferences.getInstance();
     var savedHost = prefs.getString(AppConfig.prefDiscoveredHost);
     final savedPort = prefs.getInt(AppConfig.prefDiscoveredPort);
 
-    // Fall back to default host if no saved IP
     if (savedHost == null || savedHost.isEmpty) {
       savedHost = AppConfig.defaultHost;
     }
