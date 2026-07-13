@@ -33,50 +33,89 @@ class DiscoveryService {
   })  : _encoder = encoder ?? PacketEncoder(version: AppConfig.protocolVersion),
         _port = port;
 
-  /// Sends a discovery broadcast and waits up to [timeoutMs] for responses.
-  /// Returns the first server that responds, or null if none found.
-  Future<DiscoveredServer?> discoverOnce({int timeoutMs = 2000}) async {
-    final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-    socket.broadcastEnabled = true;
-
-    // Send discovery broadcast
-    final discoveryPacket = _encoder.encodeDiscovery();
-    socket.send(
-      discoveryPacket.toBytes(),
-      InternetAddress('255.255.255.255'),
-      _port,
-    );
-
-    // Listen for responses
-    final completer = Completer<DiscoveredServer?>();
-    final timer = Timer(Duration(milliseconds: timeoutMs), () {
-      if (!completer.isCompleted) completer.complete(null);
-    });
-
-    socket.listen((event) {
-      if (completer.isCompleted) return;
-      final datagram = socket.receive();
-      if (datagram == null) return;
-
-      final packet = PacketDecoder.decode(datagram.data);
-      if (packet == null || packet.header.type != MessageType.discoveryResponse) return;
-      if (!packet.crcValid) return;
-
-      final parsed = _parseDiscoveryResp(packet.payload, datagram.address);
-      if (parsed != null && !completer.isCompleted) {
-        completer.complete(parsed);
-        timer.cancel();
+  /// Calculate subnet broadcast address from device's own IP.
+  /// e.g. 192.168.1.50 -> 192.168.1.255
+  static Future<String?> _getSubnetBroadcast() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLinkLocal: false,
+      );
+      for (final iface in interfaces) {
+        for (final addr in iface.addresses) {
+          if (addr.address.startsWith('127.')) continue;
+          // Replace last octet with 255
+          final parts = addr.address.split('.');
+          if (parts.length == 4) {
+            return '${parts[0]}.${parts[1]}.${parts[2]}.255';
+          }
+        }
       }
-    });
+    } catch (_) {}
+    return null;
+  }
 
-    final result = await completer.future;
-    socket.close();
-    return result;
+  /// Sends a discovery broadcast to a specific address.
+  Future<DiscoveredServer?> _discoverTo(String broadcastAddr, {int timeoutMs = 3000}) async {
+    RawDatagramSocket? socket;
+    try {
+      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      socket.broadcastEnabled = true;
+
+      final discoveryPacket = _encoder.encodeDiscovery();
+      socket.send(
+        discoveryPacket.toBytes(),
+        InternetAddress(broadcastAddr),
+        _port,
+      );
+
+      final completer = Completer<DiscoveredServer?>();
+      final timer = Timer(Duration(milliseconds: timeoutMs), () {
+        if (!completer.isCompleted) completer.complete(null);
+      });
+
+      socket.listen((event) {
+        if (completer.isCompleted) return;
+        final datagram = socket?.receive();
+        if (datagram == null) return;
+
+        final packet = PacketDecoder.decode(datagram.data);
+        if (packet == null || packet.header.type != MessageType.discoveryResponse) return;
+        if (!packet.crcValid) return;
+
+        final parsed = _parseDiscoveryResp(packet.payload, datagram.address);
+        if (parsed != null && !completer.isCompleted) {
+          completer.complete(parsed);
+          timer.cancel();
+        }
+      });
+
+      final result = await completer.future;
+      return result;
+    } catch (_) {
+      return null;
+    } finally {
+      socket?.close();
+    }
+  }
+
+  /// Sends a discovery broadcast and waits up to [timeoutMs] for responses.
+  /// Tries both subnet broadcast and 255.255.255.255.
+  Future<DiscoveredServer?> discoverOnce({int timeoutMs = 3000}) async {
+    // Try subnet broadcast first (more reliable)
+    final subnetBcast = await _getSubnetBroadcast();
+    if (subnetBcast != null) {
+      final result = await _discoverTo(subnetBcast, timeoutMs: timeoutMs);
+      if (result != null) return result;
+    }
+
+    // Fallback to generic broadcast
+    return _discoverTo('255.255.255.255', timeoutMs: timeoutMs);
   }
 
   /// Same as [discoverOnce] but retries [retries] times.
   Future<DiscoveredServer?> discover({
-    int timeoutMs = 2000,
+    int timeoutMs = 3000,
     int retries = 3,
   }) async {
     for (int i = 0; i < retries; i++) {

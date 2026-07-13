@@ -11,7 +11,7 @@ class AppConfig {
   static const int pingIntervalMs = 2000;
 
   /// Discovery settings
-  static const int discoveryTimeoutMs = 2000;
+  static const int discoveryTimeoutMs = 3000;
   static const int discoveryRetries = 3;
 
   /// SharedPreferences keys

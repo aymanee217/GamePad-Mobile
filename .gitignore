@@ -32,6 +32,10 @@ pc-server/obj/
 pc-wpf/bin/
 pc-wpf/obj/
 publish/
+**/bin/Release/
+**/obj/Release/
+GamePad-Mobile/pc-wpf/bin/
+GamePad-Mobile/pc-wpf/obj/
 
 # IDE
 .vs/

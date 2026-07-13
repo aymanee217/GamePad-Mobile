@@ -160,8 +160,20 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
     if (!mounted) return;
 
     ref.read(layoutProvider.notifier).setProfile(profile);
+
+    // Show discovering indicator
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Searching for server...'),
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.blueGrey,
+      ),
+    );
+
     ref.read(connectionProvider.notifier).tryAutoReconnect();
 
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ControllerScreen(
