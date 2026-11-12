@@ -9,6 +9,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/protocol/enums.dart' show StickId;
 import '../../providers/axis_state_provider.dart';
 import '../../providers/connection_provider.dart';
+import '../../providers/steering_provider.dart';
 
 /// Tilt-to-steer control.
 ///
@@ -41,9 +42,6 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
   /// very first noisy sample) makes the neutral point more accurate.
   static const int _calibrationSamples = 8;
 
-  /// Below this change (radians) a sample is treated as sensor jitter.
-  static const double _noiseRad = 0.003;
-
   StreamSubscription<AccelerometerEvent>? _sub;
   double _rawAngle = 0;
   double? _neutral;
@@ -57,6 +55,7 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
   // delta (instead of the absolute angle) removes the huge spike that used to
   // occur whenever the raw angle crossed the ±π boundary.
   double _filteredDelta = 0;
+  int _lastFilterMs = 0;
   double _steer = 0;
 
   int _lastSent = 0;
@@ -99,6 +98,7 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     _calibSin = 0;
     _calibCos = 0;
     _filteredDelta = 0;
+    _lastFilterMs = 0;
     _steer = 0;
     _lastSent = 0;
     _hasSent = false;
@@ -135,8 +135,11 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     final rawDelta = _wrap(_neutral! - angle);
     final filtered = _filterDelta(rawDelta);
 
-    var norm = (filtered / _maxTiltRad).clamp(-1.0, 1.0);
+    // Dead zone is applied in tilt space, then the user sensitivity scales
+    // the result so full lock can be reached with less or more tilt.
+    var norm = filtered / _maxTiltRad;
     if (norm.abs() < AppConfig.steeringDeadZone) norm = 0;
+    norm = (norm * ref.read(steeringSensitivityProvider)).clamp(-1.0, 1.0);
     if (_inverted) norm = -norm;
 
     if ((norm - _steer).abs() > 0.0005) {
@@ -146,16 +149,20 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     if (!widget.editMode) _send(norm);
   }
 
-  /// Zero-lag filter: any real movement is passed through untouched so the
-  /// wheel reacts on the very next sensor sample; only sub-degree jitter while
-  /// the phone is held still is damped.
+  /// Frame-rate independent low-pass filter. It reproduces the original
+  /// 25 %-per-16 ms smoothing (≈55 ms time constant) on any sensor rate, which
+  /// keeps the wheel calm instead of twitchy at 100–200 Hz.
   double _filterDelta(double rawDelta) {
-    final diff = rawDelta - _filteredDelta;
-    if (diff.abs() > _noiseRad) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (_lastFilterMs == 0) {
       _filteredDelta = rawDelta;
     } else {
-      _filteredDelta += diff * 0.25;
+      final dt = (now - _lastFilterMs).clamp(1, 100);
+      final alpha = (1 - math.exp(-dt / AppConfig.steeringSmoothTimeMs))
+          .clamp(0.05, 1.0);
+      _filteredDelta += (rawDelta - _filteredDelta) * alpha;
     }
+    _lastFilterMs = now;
     return _filteredDelta;
   }
 
@@ -163,6 +170,7 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     setState(() {
       _neutral = _rawAngle;
       _filteredDelta = 0;
+      _lastFilterMs = 0;
       _steer = 0;
     });
     _lastSent = 0;
@@ -171,6 +179,14 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
 
   void _toggleInvert() {
     setState(() => _inverted = !_inverted);
+  }
+
+  void _adjustSensitivity(double delta) {
+    ref.read(steeringSensitivityProvider.notifier).adjust(delta);
+  }
+
+  void _resetSensitivity() {
+    ref.read(steeringSensitivityProvider.notifier).reset();
   }
 
   void _send(double norm) {
@@ -205,6 +221,7 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final sensitivity = ref.watch(steeringSensitivityProvider);
     final visualAngle =
         widget.editMode ? 0.0 : _steer * (math.pi / 4); // ±45° visual
 
@@ -255,6 +272,52 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
                   color: _inverted ? Colors.cyanAccent : Colors.white70,
                 ),
                 onTap: _toggleInvert,
+              ),
+            ),
+            Positioned(
+              bottom: -10,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _chip(
+                    tooltip: 'Decrease steering sensitivity',
+                    child: const Icon(
+                      Icons.remove,
+                      size: 12,
+                      color: Colors.white70,
+                    ),
+                    onTap: () => _adjustSensitivity(
+                      -AppConfig.steeringSensitivityStep,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _chip(
+                    tooltip: 'Reset sensitivity to 1.0×',
+                    child: Text(
+                      '${sensitivity.toStringAsFixed(1)}×',
+                      style: const TextStyle(
+                        color: Colors.cyanAccent,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onTap: _resetSensitivity,
+                  ),
+                  const SizedBox(width: 4),
+                  _chip(
+                    tooltip: 'Increase steering sensitivity',
+                    child: const Icon(
+                      Icons.add,
+                      size: 12,
+                      color: Colors.white70,
+                    ),
+                    onTap: () => _adjustSensitivity(
+                      AppConfig.steeringSensitivityStep,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

@@ -18,6 +18,7 @@ class AppConfig {
   static const String prefDiscoveredHost = 'discovered_host';
   static const String prefDiscoveredPort = 'discovered_port';
   static const String prefPlayerId = 'player_id';
+  static const String prefSteeringSensitivity = 'steering_sensitivity';
 
   /// Whether to auto-reconnect to the last discovered server on start.
   static const bool autoReconnect = true;
@@ -42,10 +43,20 @@ class AppConfig {
   /// Gyro/tilt steering settings (F1 profile).
   /// Tilt (in degrees) from the calibrated centre that equals full lock.
   static const double steeringMaxTiltDeg = 35.0;
-  /// Dead zone as a fraction of full lock (0.0–1.0). Kept small so the wheel
-  /// tracks precisely; the calibrated centre already removes the offset.
-  static const double steeringDeadZone = 0.02;
+  /// Dead zone as a fraction of full lock (0.0–1.0). The calibrated centre
+  /// already removes the offset, so this only filters tiny hand movements.
+  static const double steeringDeadZone = 0.05;
   /// Safety cap between steering sends (ms). Effectively disabled at the
   /// ~100 Hz iPhone sensor rate, but protects against extreme Android rates.
   static const int steeringThrottleMs = 4;
+  /// Low-pass time constant (ms). Matches the original 60 Hz feel (25 % per
+  /// 16 ms sample) while staying frame-rate independent on faster sensors.
+  static const double steeringSmoothTimeMs = 55.0;
+
+  /// User-adjustable steering sensitivity (multiplier on the normalised
+  /// steering value). 1.0 = the original feel.
+  static const double steeringSensitivityDefault = 1.0;
+  static const double steeringSensitivityMin = 0.3;
+  static const double steeringSensitivityMax = 2.5;
+  static const double steeringSensitivityStep = 0.1;
 }
