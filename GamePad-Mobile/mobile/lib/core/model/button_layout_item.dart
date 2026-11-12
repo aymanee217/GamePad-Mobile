@@ -6,6 +6,7 @@ enum ControlType {
   button,
   joystick,
   trigger,
+  steering,
   back,
   edit,
 }
@@ -32,6 +33,9 @@ class ControlId {
   factory ControlId.fromStick(StickId id) =>
       ControlId(type: ControlType.joystick, name: id.name);
 
+  factory ControlId.fromSteering() =>
+      const ControlId(type: ControlType.steering, name: 'steering');
+
   Map<String, dynamic> toJson() => {'type': type.name, 'name': name};
 
   factory ControlId.fromJson(Map<String, dynamic> json) =>
@@ -54,6 +58,10 @@ class ButtonLayoutItem {
   double opacity;
   ButtonShape shape;
 
+  /// Optional display label (e.g. "DRS", "GAS", "BRAKE") shown instead of
+  /// the default button name. Does not change the underlying ButtonId.
+  String? label;
+
   ButtonLayoutItem({
     required this.controlId,
     required this.x,
@@ -61,6 +69,7 @@ class ButtonLayoutItem {
     this.scale = 1.0,
     this.opacity = 1.0,
     this.shape = ButtonShape.circle,
+    this.label,
   });
 
   Map<String, dynamic> toJson() => {
@@ -70,6 +79,7 @@ class ButtonLayoutItem {
         'scale': scale,
         'opacity': opacity,
         'shape': shape.name,
+        if (label != null) 'label': label,
       };
 
   factory ButtonLayoutItem.fromJson(Map<String, dynamic> json) =>
@@ -82,6 +92,7 @@ class ButtonLayoutItem {
         shape: json['shape'] != null
             ? ButtonShape.values.byName(json['shape'])
             : ButtonShape.circle,
+        label: json['label'] as String?,
       );
 
   ButtonLayoutItem copyWith({
@@ -90,6 +101,7 @@ class ButtonLayoutItem {
     double? scale,
     double? opacity,
     ButtonShape? shape,
+    String? label,
   }) =>
       ButtonLayoutItem(
         controlId: controlId,
@@ -98,6 +110,7 @@ class ButtonLayoutItem {
         scale: scale ?? this.scale,
         opacity: opacity ?? this.opacity,
         shape: shape ?? this.shape,
+        label: label ?? this.label,
       );
 }
 

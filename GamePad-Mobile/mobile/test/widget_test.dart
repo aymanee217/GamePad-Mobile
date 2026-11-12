@@ -6,6 +6,6 @@ import 'package:gamepad_mobile/main.dart';
 void main() {
   testWidgets('App renders controller screen', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: GamePadApp()));
-    expect(find.text('GamePad Mobile'), findsOneWidget);
+    expect(find.text('My Controllers'), findsOneWidget);
   });
 }

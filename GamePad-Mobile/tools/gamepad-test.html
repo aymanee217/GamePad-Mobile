@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GamePad Mobile - Controller Tester</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #171c24;
+    --panel-2: #1e2530;
+    --text: #e6edf3;
+    --muted: #8b98a5;
+    --accent: #4cc2ff;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --bad: #f85149;
+    --bar: #2b3441;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 50% -10%, #1a2430, var(--bg));
+    color: var(--text);
+    font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  header {
+    padding: 20px 24px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+  }
+  h1 { font-size: 19px; margin: 0; letter-spacing: .2px; }
+  .status {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid #2a3340;
+    font-size: 12.5px;
+  }
+  .status.ok { color: var(--ok); border-color: #1f5f33; }
+  .status.bad { color: var(--bad); border-color: #6b2320; }
+  .hint {
+    padding: 0 24px;
+    color: var(--muted);
+    font-size: 12.5px;
+    max-width: 900px;
+  }
+  main {
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(340px, 1.2fr);
+    gap: 16px;
+    padding: 16px 24px 28px;
+    align-items: start;
+  }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid #232b36;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .card h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .steering {
+    margin: 8px 24px 0;
+    background: linear-gradient(180deg, #1b2230, #141a22);
+    border: 1px solid #26303d;
+    border-radius: 12px;
+    padding: 14px 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .steering .label {
+    font-size: 11.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .steering .value {
+    font-size: 30px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    min-width: 92px;
+    color: var(--accent);
+  }
+  .steering .track { flex: 1 1 220px; }
+  .row {
+    display: grid;
+    grid-template-columns: 112px 1fr 62px;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+  }
+  .row .name {
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .track {
+    position: relative;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--bar);
+    overflow: hidden;
+  }
+  .track .mid {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #39424f;
+  }
+  .fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--accent);
+    border-radius: 6px;
+  }
+  .fill.neg { background: #7aa2ff; }
+  .fill.pressed { background: var(--ok); }
+  .fill.trigger { background: var(--warn); }
+  .row.active .name { color: var(--text); }
+  .mapping {
+    grid-column: 1 / -1;
+  }
+  details {
+    margin: 0 24px 28px;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  details summary { cursor: pointer; }
+  details p { margin: 8px 0 0; }
+  code {
+    background: #232b36;
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: #c9d6e2;
+  }
+  .note { color: var(--warn); }
+</style>
+</head>
+<body>
+<header>
+  <h1>GamePad Mobile - Controller Tester</h1>
+  <div id="status" class="status">Waiting for controller...</div>
+</header>
+<div class="hint">
+  Start the PC server, connect the phone, then send one input (tilt or press a button).
+  Keep this page open in Chrome or Edge; the controller appears automatically.
+</div>
+
+<div class="steering">
+  <div>
+    <div class="label">Steering (axes[0])</div>
+    <div class="value" id="steerValue">0.00</div>
+  </div>
+  <div class="track" id="steerTrack">
+    <div class="mid"></div>
+    <div class="fill" id="steerFill"></div>
+  </div>
+</div>
+
+<main>
+  <section class="card">
+    <h2>Axes</h2>
+    <div id="axes"></div>
+  </section>
+  <section class="card">
+    <h2>Buttons</h2>
+    <div id="buttons"></div>
+  </section>
+</main>
+
+<details>
+  <summary>Standard mapping used by Xbox 360 / XInput pads</summary>
+  <p>
+    <code>0</code> A &middot; <code>1</code> B &middot; <code>2</code> X &middot; <code>3</code> Y &middot;
+    <code>4</code> LB &middot; <code>5</code> RB &middot; <code>6</code> LT &middot; <code>7</code> RT &middot;
+    <code>8</code> Back &middot; <code>9</code> Start &middot; <code>10</code> L3 &middot; <code>11</code> R3 &middot;
+    <code>12-15</code> D-pad.
+    Axes: <code>0</code> Left X (steering), <code>1</code> Left Y, <code>2</code> Right X, <code>3</code> Right Y.
+  </p>
+  <p class="note">
+    Triggers are analog buttons, so use the value bars for LT/RT. If the page sees nothing,
+    click it once or press a button on the phone, and make sure the virtual pad was created.
+  </p>
+</details>
+
+<script>
+(() => {
+  const AXIS_NAMES = ["Left X (steer)", "Left Y", "Right X", "Right Y", "Axis 4", "Axis 5", "Axis 6", "Axis 7"];
+  const BUTTON_NAMES = [
+    "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "Back", "Start",
+    "L3", "R3", "D-pad Up", "D-pad Down", "D-pad Left", "D-pad Right", "Guide"
+  ];
+
+  const statusEl = document.getElementById("status");
+  const axesEl = document.getElementById("axes");
+  const buttonsEl = document.getElementById("buttons");
+  const steerValueEl = document.getElementById("steerValue");
+  const steerFillEl = document.getElementById("steerFill");
+
+  let axisRows = [];
+  let buttonRows = [];
+  let layoutKey = "";
+
+  function buildRows(axisCount, buttonCount) {
+    axesEl.replaceChildren();
+    buttonsEl.replaceChildren();
+    axisRows = [];
+    buttonRows = [];
+
+    for (let i = 0; i < axisCount; i++) {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<span class="name"></span>' +
+        '<span class="track"><span class="mid"></span><span class="fill"></span></span>' +
+        '<span class="num"></span>';
+      row.querySelector(".name").textContent = AXIS_NAMES[i] || ("Axis " + i);
+      axesEl.appendChild(row);
+      axisRows.push({
+        row,
+        fill: row.querySelector(".fill"),
+        num: row.querySelector(".num")
+      });
+    }
+
+    for (let i = 0; i < buttonCount; i++) {
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<span class="name"></span>' +
+        '<span class="track"><span class="fill"></span></span>' +
+        '<span class="num"></span>';
+      row.querySelector(".name").textContent =
+        (BUTTON_NAMES[i] || ("Button " + i)) + "  [" + i + "]";
+      buttonsEl.appendChild(row);
+      buttonRows.push({
+        row,
+        fill: row.querySelector(".fill"),
+        num: row.querySelector(".num")
+      });
+    }
+  }
+
+  function setAxis(entry, value) {
+    const v = Math.max(-1, Math.min(1, value));
+    entry.num.textContent = v.toFixed(2);
+    entry.row.classList.toggle("active", Math.abs(v) > 0.05);
+    if (v >= 0) {
+      entry.fill.classList.remove("neg");
+      entry.fill.style.left = "50%";
+      entry.fill.style.width = (v * 50) + "%";
+    } else {
+      entry.fill.classList.add("neg");
+      entry.fill.style.left = (50 + v * 50) + "%";
+      entry.fill.style.width = (-v * 50) + "%";
+    }
+  }
+
+  function setButton(entry, button, index) {
+    const v = Math.max(0, Math.min(1, button.value));
+    const pressed = button.pressed || v > 0.5;
+    entry.num.textContent = button.pressed ? "ON" : v.toFixed(2);
+    entry.row.classList.toggle("active", pressed || v > 0.05);
+    entry.fill.classList.toggle("pressed", button.pressed);
+    entry.fill.classList.toggle("trigger", !button.pressed && v > 0.05);
+    entry.fill.style.left = "0";
+    entry.fill.style.width = (v * 100) + "%";
+  }
+
+  function activePad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (const pad of pads) {
+      if (pad) return pad;
+    }
+    return null;
+  }
+
+  function frame() {
+    const pad = activePad();
+    if (!pad) {
+      statusEl.className = "status";
+      statusEl.textContent = "Waiting for controller...";
+      steerValueEl.textContent = "0.00";
+      steerFillEl.style.left = "50%";
+      steerFillEl.style.width = "0%";
+      requestAnimationFrame(frame);
+      return;
+    }
+
+    statusEl.className = "status ok";
+    statusEl.textContent = "Connected: " + pad.id + (pad.mapping ? "  (" + pad.mapping + ")" : "");
+
+    const key = pad.axes.length + "x" + pad.buttons.length;
+    if (key !== layoutKey) {
+      layoutKey = key;
+      buildRows(pad.axes.length, pad.buttons.length);
+    }
+
+    for (let i = 0; i < axisRows.length; i++) {
+      setAxis(axisRows[i], pad.axes[i] || 0);
+    }
+
+    const steer = pad.axes[0] || 0;
+    steerValueEl.textContent = steer.toFixed(2);
+    steerValueEl.style.color = Math.abs(steer) > 0.05 ? "var(--ok)" : "var(--accent)";
+    if (steer >= 0) {
+      steerFillEl.style.left = "50%";
+      steerFillEl.style.width = (steer * 50) + "%";
+      steerFillEl.classList.remove("neg");
+    } else {
+      steerFillEl.style.left = (50 + steer * 50) + "%";
+      steerFillEl.style.width = (-steer * 50) + "%";
+      steerFillEl.classList.add("neg");
+    }
+
+    for (let i = 0; i < buttonRows.length; i++) {
+      const button = pad.buttons[i];
+      if (button) setButton(buttonRows[i], button, i);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("gamepadconnected", () => {
+    statusEl.className = "status ok";
+    statusEl.textContent = "Controller connected";
+  });
+  window.addEventListener("gamepaddisconnected", () => {
+    statusEl.className = "status bad";
+    statusEl.textContent = "Controller disconnected";
+    layoutKey = "";
+  });
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -34,20 +34,11 @@ class _ControllerProfilesScreenState extends ConsumerState<ControllerProfilesScr
   }
 
   Future<void> _loadProfiles() async {
-    final profiles = await LayoutManager.loadAll();
-    if (profiles.isEmpty) {
-      final def = LayoutManager.defaultLayout();
-      await LayoutManager.saveAll([def]);
-      setState(() {
-        _profiles = [def];
-        _loading = false;
-      });
-    } else {
-      setState(() {
-        _profiles = profiles;
-        _loading = false;
-      });
-    }
+    final profiles = await LayoutManager.loadAllOrSeed();
+    setState(() {
+      _profiles = profiles;
+      _loading = false;
+    });
   }
 
   Future<void> _createProfile() async {

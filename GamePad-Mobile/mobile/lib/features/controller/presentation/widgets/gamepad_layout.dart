@@ -5,6 +5,7 @@ import '../../../../core/protocol/enums.dart' show ButtonId, StickId, TriggerId;
 import '../../providers/layout_provider.dart';
 import 'game_button.dart';
 import 'joystick.dart';
+import 'steering_wheel.dart';
 import 'trigger_button.dart';
 
 /// Data-driven gamepad layout using Stack + Positioned for free-form placement.
@@ -120,10 +121,10 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
     final id = item.controlId;
     switch (id.type) {
       case ControlType.button:
-        return _buttonFromId(id.name, size, item.opacity, editMode, isSelected, item.shape);
+        return _buttonFromId(id.name, item.label, size, item.opacity, editMode, isSelected, item.shape);
       case ControlType.trigger:
         return TriggerButton(
-          label: id.name.toUpperCase(),
+          label: item.label ?? id.name.toUpperCase(),
           triggerId: TriggerId.values.firstWhere((t) => t.name == id.name),
           width: size * 1.4,
           height: size * 0.9,
@@ -135,6 +136,13 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
       case ControlType.joystick:
         return Joystick(
           stickId: StickId.values.firstWhere((s) => s.name == id.name),
+          size: size,
+          editMode: editMode,
+          isSelected: isSelected,
+          opacity: item.opacity,
+        );
+      case ControlType.steering:
+        return SteeringWheel(
           size: size,
           editMode: editMode,
           isSelected: isSelected,
@@ -197,9 +205,10 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
     );
   }
 
-  Widget _buttonFromId(String name, double size, double opacity, bool editMode, bool isSelected, ButtonShape shape) {
+  Widget _buttonFromId(String name, String? customLabel, double size, double opacity, bool editMode, bool isSelected, ButtonShape shape) {
     final id = ButtonId.values.firstWhere((b) => b.name == name);
-    final (label, color) = _buttonProps(id);
+    final (defaultLabel, color) = _buttonProps(id);
+    final label = customLabel ?? defaultLabel;
 
     final isRect = shape == ButtonShape.rectangle;
     final w = isRect ? size * 1.4 : size;
@@ -238,6 +247,7 @@ class _GamepadLayoutState extends ConsumerState<GamepadLayout> {
 
   double _baseSize(ControlId id) {
     if (id.type == ControlType.joystick) return 90;
+    if (id.type == ControlType.steering) return 110;
     if (id.type == ControlType.trigger) return 40;
     if (id.type == ControlType.back || id.type == ControlType.edit) return 44;
     if (id.name == 'guide') return 50;

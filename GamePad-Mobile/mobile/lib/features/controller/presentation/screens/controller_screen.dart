@@ -188,7 +188,7 @@ class _EditorPanel extends StatelessWidget {
         children: [
           // Title
           Text(
-            selected != null ? _label(selected) : 'Tap a button to edit',
+            selected != null ? _label(selected, item?.label) : 'Tap a button to edit',
             style: const TextStyle(color: Colors.white70, fontSize: 13),
           ),
 
@@ -296,11 +296,14 @@ class _EditorPanel extends StatelessWidget {
     );
   }
 
-  String _label(ControlId id) {
+  String _label(ControlId id, [String? customLabel]) {
     if (id.type == ControlType.joystick) return 'Joystick ${id.name == 'left' ? 'L' : 'R'}';
-    if (id.type == ControlType.trigger) return 'Trigger ${id.name.toUpperCase()}';
+    if (id.type == ControlType.steering) return 'Gyro Steering (tilt the phone)';
+    if (id.type == ControlType.trigger) {
+      return 'Trigger ${id.name.toUpperCase()}${customLabel != null ? ' ($customLabel)' : ''}';
+    }
     if (id.type == ControlType.back) return 'Back Button';
     if (id.type == ControlType.edit) return 'Edit Button';
-    return 'Button ${id.name.toUpperCase()}';
+    return 'Button ${id.name.toUpperCase()}${customLabel != null ? ' ($customLabel)' : ''}';
   }
 }

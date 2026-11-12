@@ -38,4 +38,10 @@ class AppConfig {
   static const double joystickOuterRadius = 55;
   /// Joystick thumb radius.
   static const double joystickThumbRadius = 22;
+
+  /// Gyro/tilt steering settings (F1 profile).
+  /// Tilt (in degrees) from the calibrated centre that equals full lock.
+  static const double steeringMaxTiltDeg = 35.0;
+  /// Dead zone as a fraction of full lock (0.0–1.0).
+  static const double steeringDeadZone = 0.05;
 }
