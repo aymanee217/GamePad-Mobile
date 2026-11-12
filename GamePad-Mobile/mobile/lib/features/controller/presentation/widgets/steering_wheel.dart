@@ -14,7 +14,7 @@ import '../../providers/connection_provider.dart';
 ///
 /// Reads the device accelerometer, converts the phone's roll angle into the
 /// left stick X axis and sends it to the PC server. Intended for the F1
-/// profile where the phone is held like a steering wheel in landscape.
+/// profile where the phone is held upright like a steering wheel.
 class SteeringWheel extends ConsumerStatefulWidget {
   final double size;
   final bool editMode;
@@ -37,11 +37,28 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
   static const double _maxTiltRad =
       AppConfig.steeringMaxTiltDeg * math.pi / 180.0;
 
+  /// Samples averaged when centring the wheel. A short window (instead of the
+  /// very first noisy sample) makes the neutral point more accurate.
+  static const int _calibrationSamples = 8;
+
+  /// Below this change (radians) a sample is treated as sensor jitter.
+  static const double _noiseRad = 0.003;
+
   StreamSubscription<AccelerometerEvent>? _sub;
   double _rawAngle = 0;
-  double? _filteredAngle;
   double? _neutral;
+
+  // Calibration accumulators (vector mean so the ±π wrap is handled).
+  int _calibCount = 0;
+  double _calibSin = 0;
+  double _calibCos = 0;
+
+  // Steering is filtered in the neutral-relative domain. Filtering the wrapped
+  // delta (instead of the absolute angle) removes the huge spike that used to
+  // occur whenever the raw angle crossed the ±π boundary.
+  double _filteredDelta = 0;
   double _steer = 0;
+
   int _lastSent = 0;
   int _lastSendMs = 0;
   bool _hasSent = false;
@@ -51,8 +68,10 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
   @override
   void initState() {
     super.initState();
+    // Ask the OS for its fastest sensor rate (100 Hz on iPhone, up to 200 Hz
+    // on many Android phones) instead of the old fixed 16 ms (60 Hz).
     _sub = accelerometerEventStream(
-      samplingPeriod: const Duration(milliseconds: 16),
+      samplingPeriod: SensorInterval.fastestInterval,
     ).listen(_onEvent, onError: (_) {});
   }
 
@@ -63,11 +82,7 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     if (_lastOrientation != null && _lastOrientation != orientation) {
       // Rotating portrait ↔ landscape changes the raw roll by ~90°.
       // Re-centre so the wheel starts neutral in the new orientation.
-      _neutral = null;
-      _filteredAngle = null;
-      _steer = 0;
-      _lastSent = 0;
-      _hasSent = false;
+      _resetCalibration();
     }
     _lastOrientation = orientation;
   }
@@ -78,40 +93,76 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     super.dispose();
   }
 
+  void _resetCalibration() {
+    _neutral = null;
+    _calibCount = 0;
+    _calibSin = 0;
+    _calibCos = 0;
+    _filteredDelta = 0;
+    _steer = 0;
+    _lastSent = 0;
+    _hasSent = false;
+  }
+
+  /// Wraps [angle] into (-π, π].
+  static double _wrap(double angle) {
+    var a = angle;
+    while (a > math.pi) {
+      a -= 2 * math.pi;
+    }
+    while (a < -math.pi) {
+      a += 2 * math.pi;
+    }
+    return a;
+  }
+
   void _onEvent(AccelerometerEvent event) {
     if (!mounted) return;
 
     final angle = math.atan2(event.x, event.y);
     _rawAngle = angle;
 
-    // Low-pass filter to keep steering smooth despite sensor noise.
-    _filteredAngle ??= angle;
-    _filteredAngle = _filteredAngle! * 0.75 + angle * 0.25;
-    final smoothed = _filteredAngle!;
-
-    _neutral ??= smoothed;
-
-    var delta = _neutral! - smoothed;
-    while (delta > math.pi) {
-      delta -= 2 * math.pi;
-    }
-    while (delta < -math.pi) {
-      delta += 2 * math.pi;
+    // Average a few samples before fixing the neutral position.
+    if (_neutral == null) {
+      _calibSin += math.sin(angle);
+      _calibCos += math.cos(angle);
+      _calibCount++;
+      if (_calibCount < _calibrationSamples) return;
+      _neutral = math.atan2(_calibSin, _calibCos);
+      _filteredDelta = 0;
     }
 
-    if (_inverted) delta = -delta;
+    final rawDelta = _wrap(_neutral! - angle);
+    final filtered = _filterDelta(rawDelta);
 
-    var norm = (delta / _maxTiltRad).clamp(-1.0, 1.0);
+    var norm = (filtered / _maxTiltRad).clamp(-1.0, 1.0);
     if (norm.abs() < AppConfig.steeringDeadZone) norm = 0;
+    if (_inverted) norm = -norm;
 
-    setState(() => _steer = norm);
+    if ((norm - _steer).abs() > 0.0005) {
+      setState(() => _steer = norm);
+    }
 
     if (!widget.editMode) _send(norm);
   }
 
+  /// Zero-lag filter: any real movement is passed through untouched so the
+  /// wheel reacts on the very next sensor sample; only sub-degree jitter while
+  /// the phone is held still is damped.
+  double _filterDelta(double rawDelta) {
+    final diff = rawDelta - _filteredDelta;
+    if (diff.abs() > _noiseRad) {
+      _filteredDelta = rawDelta;
+    } else {
+      _filteredDelta += diff * 0.25;
+    }
+    return _filteredDelta;
+  }
+
   void _calibrate() {
     setState(() {
-      _neutral = _filteredAngle ?? _rawAngle;
+      _neutral = _rawAngle;
+      _filteredDelta = 0;
       _steer = 0;
     });
     _lastSent = 0;
@@ -130,7 +181,7 @@ class _SteeringWheelState extends ConsumerState<SteeringWheel> {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     if (_hasSent && value == _lastSent) return;
-    if (_hasSent && now - _lastSendMs < AppConfig.joystickThrottleMs) return;
+    if (_hasSent && now - _lastSendMs < AppConfig.steeringThrottleMs) return;
 
     _lastSent = value;
     _lastSendMs = now;

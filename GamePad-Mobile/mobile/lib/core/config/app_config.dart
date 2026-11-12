@@ -42,6 +42,10 @@ class AppConfig {
   /// Gyro/tilt steering settings (F1 profile).
   /// Tilt (in degrees) from the calibrated centre that equals full lock.
   static const double steeringMaxTiltDeg = 35.0;
-  /// Dead zone as a fraction of full lock (0.0–1.0).
-  static const double steeringDeadZone = 0.05;
+  /// Dead zone as a fraction of full lock (0.0–1.0). Kept small so the wheel
+  /// tracks precisely; the calibrated centre already removes the offset.
+  static const double steeringDeadZone = 0.02;
+  /// Safety cap between steering sends (ms). Effectively disabled at the
+  /// ~100 Hz iPhone sensor rate, but protects against extreme Android rates.
+  static const int steeringThrottleMs = 4;
 }

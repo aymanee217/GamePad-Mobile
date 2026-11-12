@@ -26,16 +26,33 @@ class ControllerScreen extends ConsumerStatefulWidget {
 class _ControllerScreenState extends ConsumerState<ControllerScreen> {
   bool _initialized = false;
 
+  /// Tilt-steering (F1) profiles are laid out for portrait use, so keep the
+  /// screen upright while they are open instead of following device rotation.
+  bool get _locksPortrait => widget.profile.items
+      .any((item) => item.controlId.type == ControlType.steering);
+
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (_locksPortrait) {
+      SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+      ]);
+    }
   }
 
   @override
   void dispose() {
+    _restoreOrientations();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  /// Re-enables normal rotation when leaving a portrait-locked profile.
+  void _restoreOrientations() {
+    if (!_locksPortrait) return;
+    SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
   }
 
   @override
@@ -58,6 +75,7 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
           Positioned.fill(
             child: GamepadLayout(
               onBackTap: () {
+                _restoreOrientations();
                 SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                 Navigator.of(context).pop();
               },
@@ -101,6 +119,7 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
                         ? () {
                             ref.read(connectionProvider.notifier).sendDisconnect();
                             ref.read(connectionProvider.notifier).disconnect();
+                            _restoreOrientations();
                             SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
                             Navigator.of(context).pop();
                           }
