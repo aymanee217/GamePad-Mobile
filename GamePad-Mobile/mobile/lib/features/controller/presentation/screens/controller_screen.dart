@@ -26,20 +26,19 @@ class ControllerScreen extends ConsumerStatefulWidget {
 class _ControllerScreenState extends ConsumerState<ControllerScreen> {
   bool _initialized = false;
 
-  /// Tilt-steering (F1) profiles are laid out for portrait use, so keep the
-  /// screen upright while they are open instead of following device rotation.
-  bool get _locksPortrait => widget.profile.items
-      .any((item) => item.controlId.type == ControlType.steering);
+  /// The controller is meant to be held horizontally like a gamepad, so lock
+  /// the screen to landscape while it is open instead of following rotation.
+  /// Both directions are allowed so the phone can be flipped either way.
+  static const List<DeviceOrientation> _landscapeOrientations = [
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ];
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    if (_locksPortrait) {
-      SystemChrome.setPreferredOrientations(const [
-        DeviceOrientation.portraitUp,
-      ]);
-    }
+    SystemChrome.setPreferredOrientations(_landscapeOrientations);
   }
 
   @override
@@ -49,9 +48,8 @@ class _ControllerScreenState extends ConsumerState<ControllerScreen> {
     super.dispose();
   }
 
-  /// Re-enables normal rotation when leaving a portrait-locked profile.
+  /// Re-enables normal rotation when leaving the controller.
   void _restoreOrientations() {
-    if (!_locksPortrait) return;
     SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
   }
 
